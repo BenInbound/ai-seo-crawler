@@ -189,4 +189,4 @@ For issues, questions, or contributions:
 
 Built with ❤️ for better AI search optimization
 
-🚀 Deploy to Vercel for live AI SEO analysis
+🚀 Deploy to Vercel for live AI SEO analysis - v1.0.1
