@@ -1,4 +1,5 @@
 const puppeteer = require('puppeteer');
+const chromium = require('@sparticuz/chromium');
 const { RobotsChecker } = require('../utils/robotsChecker');
 const { ContentAnalyzer } = require('./analyzer');
 const { ScoreCalculator } = require('./scorer');
@@ -17,9 +18,12 @@ class CrawlerEngine {
 
   async initBrowser() {
     if (!this.browser) {
+      // Configure for Vercel serverless environment
+      const isProduction = process.env.NODE_ENV === 'production';
+      
       this.browser = await puppeteer.launch({
-        headless: 'new',
-        args: [
+        headless: chromium.headless,
+        args: isProduction ? chromium.args : [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
@@ -28,7 +32,8 @@ class CrawlerEngine {
           '--no-zygote',
           '--single-process',
           '--disable-gpu'
-        ]
+        ],
+        executablePath: isProduction ? await chromium.executablePath() : undefined
       });
     }
     return this.browser;

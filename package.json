@@ -21,6 +21,7 @@
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
     "puppeteer": "^22.6.5",
+    "@sparticuz/chromium": "^121.0.0",
     "cheerio": "^1.0.0-rc.12",
     "robots-parser": "^3.0.1",
     "lighthouse": "^11.7.1",
