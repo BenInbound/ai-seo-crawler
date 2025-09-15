@@ -1,5 +1,7 @@
 const puppeteer = require(process.env.NODE_ENV === 'production' ? 'puppeteer-core' : 'puppeteer');
 const chromium = require('@sparticuz/chromium');
+const axios = require('axios');
+const cheerio = require('cheerio');
 const { RobotsChecker } = require('../utils/robotsChecker');
 const { ContentAnalyzer } = require('./analyzer');
 const { ScoreCalculator } = require('./scorer');
@@ -18,38 +20,122 @@ class CrawlerEngine {
 
   async initBrowser() {
     if (!this.browser) {
-      // Configure for Vercel serverless environment
-      const isProduction = process.env.NODE_ENV === 'production';
-      
-      if (isProduction) {
-        this.browser = await puppeteer.launch({
-          args: [
-            ...chromium.args,
-            '--hide-scrollbars',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-          ],
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath(),
-          headless: chromium.headless,
-        });
-      } else {
-        this.browser = await puppeteer.launch({
-          headless: 'new',
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
-          ]
-        });
+      try {
+        // Configure for Vercel serverless environment
+        const isProduction = process.env.NODE_ENV === 'production';
+        
+        if (isProduction) {
+          // Get fonts path if available
+          const fontsPath = await chromium.font || null;
+          
+          this.browser = await puppeteer.launch({
+            args: [
+              ...chromium.args,
+              '--hide-scrollbars',
+              '--disable-web-security',
+              '--disable-features=VizDisplayCompositor',
+              fontsPath ? `--font-render-hinting=none` : '',
+            ].filter(Boolean),
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath(),
+            headless: chromium.headless,
+            ignoreHTTPSErrors: true,
+          });
+        } else {
+          this.browser = await puppeteer.launch({
+            headless: 'new',
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--single-process',
+              '--disable-gpu'
+            ]
+          });
+        }
+      } catch (error) {
+        console.warn('Puppeteer failed to launch, will use fallback HTTP method:', error.message);
+        this.browser = null; // Mark as failed, will use HTTP fallback
       }
     }
     return this.browser;
+  }
+
+  async crawlPageHTTP(url) {
+    console.log(`Using HTTP fallback for: ${url}`);
+    
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': this.userAgent,
+        },
+        timeout: this.timeout,
+        maxRedirects: 5,
+      });
+
+      const $ = cheerio.load(response.data);
+      
+      // Extract structured data
+      const structuredData = [];
+      $('script[type="application/ld+json"]').each((i, el) => {
+        try {
+          structuredData.push(JSON.parse($(el).text()));
+        } catch (e) {
+          // Invalid JSON, skip
+        }
+      });
+
+      // Extract basic page data
+      const pageData = {
+        url: url,
+        title: $('title').text() || '',
+        metaDescription: $('meta[name="description"]').attr('content') || '',
+        html: response.data,
+        structuredData,
+        
+        ogData: {
+          title: $('meta[property="og:title"]').attr('content') || '',
+          description: $('meta[property="og:description"]').attr('content') || '',
+          image: $('meta[property="og:image"]').attr('content') || '',
+          type: $('meta[property="og:type"]').attr('content') || ''
+        },
+
+        headings: {
+          h1: $('h1').map((i, el) => $(el).text().trim()).get(),
+          h2: $('h2').map((i, el) => $(el).text().trim()).get(),
+          h3: $('h3').map((i, el) => $(el).text().trim()).get()
+        },
+
+        links: {
+          internal: $('a[href]').map((i, el) => $(el).attr('href')).get()
+            .filter(href => href && href.includes(new URL(url).hostname)),
+          external: $('a[href]').map((i, el) => $(el).attr('href')).get()
+            .filter(href => href && href.startsWith('http') && !href.includes(new URL(url).hostname))
+        },
+
+        images: $('img').map((i, el) => ({
+          src: $(el).attr('src') || '',
+          alt: $(el).attr('alt') || '',
+          hasAlt: Boolean($(el).attr('alt'))
+        })).get(),
+
+        textContent: $('body').text() || '',
+        wordCount: ($('body').text() || '').split(/\s+/).filter(word => word.length > 0).length,
+        statusCode: response.status,
+        loadTime: 0, // Not available in HTTP mode
+        responseHeaders: response.headers,
+        timestamp: new Date().toISOString(),
+        fallbackMode: true
+      };
+
+      return pageData;
+    } catch (error) {
+      console.error('HTTP fallback also failed:', error.message);
+      throw error;
+    }
   }
 
   async closeBrowser() {
@@ -141,13 +227,15 @@ class CrawlerEngine {
       // Update user agent for this analysis
       this.userAgent = selectedUserAgent;
 
-      // Initialize browser
+      // Initialize browser (or try to)
       await this.initBrowser();
 
-      // Crawl target page
+      // Crawl target page - use fallback if Puppeteer failed
       const pageType = specificUrl ? 'specific page' : 'homepage';
       console.log(`Crawling ${pageType} with user agent: ${selectedUserAgent.substring(0, 50)}...`);
-      const pageData = await this.crawlPage(targetUrl, crawlDelay);
+      const pageData = this.browser 
+        ? await this.crawlPage(targetUrl, crawlDelay)
+        : await this.crawlPageHTTP(targetUrl);
       console.log(`Page data extracted:`, {
         title: pageData.title,
         wordCount: pageData.wordCount,
@@ -222,7 +310,10 @@ class CrawlerEngine {
 
       throw error;
     } finally {
-      await this.closeBrowser();
+      // Only close browser if it was successfully created
+      if (this.browser) {
+        await this.closeBrowser();
+      }
     }
   }
 

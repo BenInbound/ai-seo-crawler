@@ -14,15 +14,16 @@
     "setup": "npm install && cd client && npm install",
     "install-client": "cd client && npm install",
     "postinstall": "cd client && npm install",
-    "vercel-build": "cd client && npm install && npm run build"
+    "vercel-build": "npm install && cd client && npm install && npm run build"
   },
   "dependencies": {
     "express": "^4.19.2",
+    "axios": "^1.6.8",
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
-    "puppeteer-core": "^22.6.5",
-    "puppeteer": "^22.6.5",
-    "@sparticuz/chromium": "^121.0.0",
+    "puppeteer-core": "^21.0.0",
+    "puppeteer": "^21.0.0",
+    "@sparticuz/chromium": "^119.0.0",
     "cheerio": "^1.0.0-rc.12",
     "robots-parser": "^3.0.1",
     "lighthouse": "^11.7.1",
