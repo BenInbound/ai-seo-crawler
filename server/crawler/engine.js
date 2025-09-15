@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require(process.env.NODE_ENV === 'production' ? 'puppeteer-core' : 'puppeteer');
 const chromium = require('@sparticuz/chromium');
 const { RobotsChecker } = require('../utils/robotsChecker');
 const { ContentAnalyzer } = require('./analyzer');
@@ -21,20 +21,33 @@ class CrawlerEngine {
       // Configure for Vercel serverless environment
       const isProduction = process.env.NODE_ENV === 'production';
       
-      this.browser = await puppeteer.launch({
-        headless: chromium.headless,
-        args: isProduction ? chromium.args : [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-gpu'
-        ],
-        executablePath: isProduction ? await chromium.executablePath() : undefined
-      });
+      if (isProduction) {
+        this.browser = await puppeteer.launch({
+          args: [
+            ...chromium.args,
+            '--hide-scrollbars',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+          ],
+          defaultViewport: chromium.defaultViewport,
+          executablePath: await chromium.executablePath(),
+          headless: chromium.headless,
+        });
+      } else {
+        this.browser = await puppeteer.launch({
+          headless: 'new',
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu'
+          ]
+        });
+      }
     }
     return this.browser;
   }
