@@ -14,7 +14,7 @@
     "setup": "npm install && cd client && npm install",
     "install-client": "cd client && npm install",
     "postinstall": "cd client && npm install",
-    "vercel-build": "npm run build"
+    "vercel-build": "cd client && npm install && npm run build"
   },
   "dependencies": {
     "express": "^4.19.2",
