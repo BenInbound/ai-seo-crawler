@@ -21,7 +21,6 @@
     "helmet": "^7.1.0",
     "puppeteer": "^22.6.5",
     "cheerio": "^1.0.0-rc.12",
-    "sqlite3": "^5.1.6",
     "robots-parser": "^3.0.1",
     "lighthouse": "^11.7.1",
     "schema-inspector": "^2.0.2",

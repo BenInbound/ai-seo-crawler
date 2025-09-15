@@ -28,7 +28,7 @@ RUN npm ci --only=production && npm cache clean --force
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p database logs
+RUN mkdir -p logs
 
 # Build client if needed
 RUN cd client && npm ci && npm run build

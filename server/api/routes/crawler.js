@@ -1,17 +1,16 @@
 const express = require('express');
 const { CrawlerEngine } = require('../../crawler/engine');
-const { getCrawlResult, getCrawlHistory } = require('../../models/database');
-const { RobotsChecker } = require('../../utils/robotsChecker');
 
 const router = express.Router();
 
-// Create shared robots checker instance to clear cache
-const robotsChecker = new RobotsChecker();
+// Simple in-memory rate limiting for domain analysis
+const domainRateLimit = new Map();
+const RATE_LIMIT_MS = 60000; // 1 minute between analyses for same domain
 
 // Analyze a domain
 router.post('/analyze', async (req, res) => {
   try {
-    const { domain, url, forceRefresh = false } = req.body;
+    const { domain, url } = req.body;
 
     if (!domain) {
       return res.status(400).json({
@@ -27,26 +26,33 @@ router.post('/analyze', async (req, res) => {
       });
     }
 
-    // Check for recent results unless force refresh is requested
-    if (!forceRefresh) {
-      const recentResult = await getCrawlResult(domain, 24 * 60 * 60 * 1000); // 24 hours
-      if (recentResult) {
-        return res.json({
-          cached: true,
-          result: recentResult
-        });
+    // Simple rate limiting per domain
+    const now = Date.now();
+    const lastAnalysis = domainRateLimit.get(domain);
+    if (lastAnalysis && (now - lastAnalysis) < RATE_LIMIT_MS) {
+      const remainingMs = RATE_LIMIT_MS - (now - lastAnalysis);
+      return res.status(429).json({
+        error: 'Rate limit exceeded',
+        message: `Please wait ${Math.ceil(remainingMs / 1000)} seconds before analyzing this domain again`,
+        retryAfter: Math.ceil(remainingMs / 1000)
+      });
+    }
+
+    // Update rate limit timestamp
+    domainRateLimit.set(domain, now);
+
+    // Clean up old entries (keep map small)
+    if (domainRateLimit.size > 1000) {
+      const cutoff = now - RATE_LIMIT_MS;
+      for (const [key, timestamp] of domainRateLimit.entries()) {
+        if (timestamp < cutoff) {
+          domainRateLimit.delete(key);
+        }
       }
     }
 
-    // Start crawling
+    // Start crawling - always fresh analysis
     const crawler = new CrawlerEngine();
-    
-    // Clear robots cache if force refresh is requested
-    if (forceRefresh) {
-      crawler.robotsChecker.clearCache();
-      console.log(`🔄 Cleared robots.txt cache for force refresh`);
-    }
-    
     const result = await crawler.analyzeDomain(domain, url);
 
     res.json({
@@ -58,71 +64,6 @@ router.post('/analyze', async (req, res) => {
     console.error('Analysis error:', error);
     res.status(500).json({
       error: 'Analysis failed',
-      message: error.message
-    });
-  }
-});
-
-// Get crawl history for a domain
-router.get('/history/:domain', async (req, res) => {
-  try {
-    const { domain } = req.params;
-    const { limit = 10 } = req.query;
-
-    const history = await getCrawlHistory(domain, parseInt(limit));
-
-    res.json({
-      domain,
-      history
-    });
-
-  } catch (error) {
-    console.error('History fetch error:', error);
-    res.status(500).json({
-      error: 'Failed to fetch history',
-      message: error.message
-    });
-  }
-});
-
-// Clear all caches (for debugging)
-router.post('/clear-cache', async (req, res) => {
-  try {
-    // Clear robots.txt cache
-    robotsChecker.clearCache();
-    console.log(`🧹 All caches cleared via API`);
-    
-    res.json({
-      message: 'All caches cleared successfully',
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('Cache clear error:', error);
-    res.status(500).json({
-      error: 'Failed to clear cache',
-      message: error.message
-    });
-  }
-});
-
-// Get analysis status (for potential future real-time updates)
-router.get('/status/:jobId', async (req, res) => {
-  try {
-    const { jobId } = req.params;
-    
-    // This would be used for real-time status updates
-    // For now, return a placeholder
-    res.json({
-      jobId,
-      status: 'completed',
-      message: 'Analysis complete'
-    });
-
-  } catch (error) {
-    console.error('Status check error:', error);
-    res.status(500).json({
-      error: 'Failed to check status',
       message: error.message
     });
   }

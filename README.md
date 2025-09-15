@@ -5,9 +5,11 @@ A comprehensive website analysis tool that evaluates your site's optimization fo
 ## Features
 
 - **AI Search Optimization Analysis**: Evaluates content structure, E-A-T signals, technical SEO, and structured data
-- **Respectful Crawling**: Honors robots.txt files and implements ethical crawling practices
+- **Always Fresh Analysis**: No caching - every analysis provides current, up-to-date results
+- **Respectful Crawling**: Honors robots.txt files and implements ethical crawling practices  
 - **Real-time Analysis**: Instant feedback with detailed scoring across multiple categories
 - **Actionable Recommendations**: Specific improvements with code examples and implementation guides
+- **Stateless Architecture**: Simple, reliable, and scalable design like professional SEO tools
 - **Modern UI**: Clean, responsive interface with real-time progress indicators
 
 ## What We Analyze
@@ -93,13 +95,11 @@ A comprehensive website analysis tool that evaluates your site's optimization fo
 │   │   ├── engine.js      # Main crawler with Puppeteer
 │   │   ├── analyzer.js    # Content analysis algorithms
 │   │   └── scorer.js      # Scoring and recommendations
-│   ├── models/            # Database models and operations
 │   └── utils/             # Utility functions
 ├── client/                # React frontend application
 │   ├── src/components/    # React components
 │   ├── src/styles/        # CSS and styling
 │   └── public/           # Static assets
-├── database/             # SQLite database files
 └── package.json          # Project configuration
 ```
 
@@ -110,7 +110,6 @@ Environment variables (`.env`):
 ```bash
 PORT=3001                    # Server port
 NODE_ENV=development         # Environment
-DB_PATH=./database/crawler.db # Database location
 CRAWLER_DELAY_MS=2000       # Delay between requests
 CRAWLER_TIMEOUT_MS=30000    # Request timeout
 RATE_LIMIT_REQUESTS=100     # Rate limit per window
@@ -119,8 +118,7 @@ RATE_LIMIT_WINDOW_MS=900000 # Rate limit window (15 minutes)
 
 ## API Endpoints
 
-- `POST /api/crawler/analyze` - Analyze a domain
-- `GET /api/crawler/history/:domain` - Get crawl history
+- `POST /api/crawler/analyze` - Analyze a domain (always fresh results)
 - `GET /api/health` - Health check
 
 ## Ethical Crawling
@@ -133,14 +131,33 @@ This tool implements responsible crawling practices:
 - **User Agent**: Identifies itself clearly as an analysis tool
 - **Timeout Handling**: Proper error handling and request timeouts
 
+## Stateless Design Philosophy
+
+This tool follows a **stateless architecture** similar to professional SEO tools:
+
+### Why No Database/Caching?
+- **Always Fresh Results**: Users expect current analysis, not stale cached data
+- **Better UX**: No confusion about why scores don't change after improvements
+- **Industry Standard**: Google PageSpeed Insights, GTmetrix, Lighthouse all provide fresh analysis
+- **Simpler Deployment**: No database setup, migrations, or persistence concerns
+- **Predictable Behavior**: Same input always produces current results
+
+### Rate Limiting Strategy
+- **Per-Domain Limiting**: 60-second cooldown between analyses of the same domain
+- **In-Memory Storage**: Simple Map-based tracking, no persistence needed
+- **Automatic Cleanup**: Old entries are automatically purged to prevent memory bloat
+- **Respectful Crawling**: Combined with built-in delays for ethical site analysis
+
+This approach prioritizes **reliability** and **user experience** over premature optimization.
+
 ## Technology Stack
 
 ### Backend
 - **Node.js & Express**: Server framework
 - **Puppeteer**: Headless browser for crawling
 - **Cheerio**: HTML parsing and analysis
-- **SQLite**: Local database for caching results
-- **Rate Limiting**: Request throttling and protection
+- **Stateless Architecture**: No database - always fresh analysis
+- **In-Memory Rate Limiting**: Simple, efficient request throttling
 
 ### Frontend
 - **React**: User interface framework

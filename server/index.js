@@ -6,7 +6,6 @@ const path = require('path');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
 const crawlerRoutes = require('./api/routes/crawler');
-const { initDatabase } = require('./models/database');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -76,22 +75,11 @@ app.use('*', (req, res) => {
   });
 });
 
-// Initialize database and start server
-async function startServer() {
-  try {
-    await initDatabase();
-    console.log('Database initialized successfully');
-    
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-}
-
-startServer();
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('AI Search Crawler ready - stateless analysis mode');
+});
 
 module.exports = app;
