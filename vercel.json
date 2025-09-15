@@ -1,6 +1,7 @@
 {
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "client/build",
+  "installCommand": "npm install && cd client && npm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -9,11 +10,7 @@
   ],
   "functions": {
     "api/index.js": {
-      "maxDuration": 30,
-      "memory": 1024
+      "maxDuration": 30
     }
-  },
-  "env": {
-    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
   }
 }

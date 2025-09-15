@@ -14,7 +14,7 @@
     "setup": "npm install && cd client && npm install",
     "install-client": "cd client && npm install",
     "postinstall": "cd client && npm install",
-    "vercel-build": "npm install && cd client && npm install && npm run build"
+    "vercel-build": "cd client && npm run build"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -22,13 +22,9 @@
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
     "puppeteer-core": "^21.0.0",
-    "puppeteer": "^21.0.0",
     "@sparticuz/chromium": "^119.0.0",
     "cheerio": "^1.0.0-rc.12",
     "robots-parser": "^3.0.1",
-    "lighthouse": "^11.7.1",
-    "schema-inspector": "^2.0.2",
-    "url-parse": "^1.5.10",
     "dotenv": "^16.4.5",
     "rate-limiter-flexible": "^5.0.3"
   },
