@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  ai-seo-crawler:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DB_PATH=/app/database/crawler.db
+      - CRAWLER_DELAY_MS=2000
+      - CRAWLER_TIMEOUT_MS=30000
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW_MS=900000
+    volumes:
+      - crawler_data:/app/database
+      - crawler_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  crawler_data:
+    driver: local
+  crawler_logs:
+    driver: local
