@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "setup": "npm install && cd client && npm install",
     "install-client": "cd client && npm install",
-    "postinstall": "cd client && npm install"
+    "postinstall": "cd client && npm install",
+    "vercel-build": "cd client && npm ci && npm run build"
   },
   "dependencies": {
     "express": "^4.19.2",

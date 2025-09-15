@@ -2,7 +2,6 @@ const puppeteer = require('puppeteer');
 const { RobotsChecker } = require('../utils/robotsChecker');
 const { ContentAnalyzer } = require('./analyzer');
 const { ScoreCalculator } = require('./scorer');
-const { saveCrawlResult } = require('../models/database');
 const URL = require('url').URL;
 
 class CrawlerEngine {
@@ -43,7 +42,6 @@ class CrawlerEngine {
   }
 
   async analyzeDomain(domain, specificUrl = null) {
-    let crawlResultId = null;
     
     try {
       // Normalize domain and determine target URL
@@ -113,10 +111,7 @@ class CrawlerEngine {
           errorMessage: 'All crawling strategies blocked by robots.txt'
         };
 
-        crawlResultId = await saveCrawlResult(failedData);
-        
         return {
-          id: crawlResultId,
           ...failedData,
           blocked: true
         };
@@ -183,13 +178,9 @@ class CrawlerEngine {
         status: 'completed'
       };
 
-      // Save to database
-      crawlResultId = await saveCrawlResult(resultData);
-
       console.log(`Analysis completed for ${normalizedDomain}, score: ${scores.overall}`);
 
       return {
-        id: crawlResultId,
         ...resultData
       };
 
@@ -210,8 +201,6 @@ class CrawlerEngine {
         status: 'failed',
         errorMessage: error.message
       };
-
-      crawlResultId = await saveCrawlResult(failedData);
 
       throw error;
     } finally {
