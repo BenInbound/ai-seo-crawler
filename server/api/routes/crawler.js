@@ -11,7 +11,7 @@ const robotsChecker = new RobotsChecker();
 // Analyze a domain
 router.post('/analyze', async (req, res) => {
   try {
-    const { domain, forceRefresh = false } = req.body;
+    const { domain, url, forceRefresh = false } = req.body;
 
     if (!domain) {
       return res.status(400).json({
@@ -47,7 +47,7 @@ router.post('/analyze', async (req, res) => {
       console.log(`🔄 Cleared robots.txt cache for force refresh`);
     }
     
-    const result = await crawler.analyzeDomain(domain);
+    const result = await crawler.analyzeDomain(domain, url);
 
     res.json({
       cached: false,

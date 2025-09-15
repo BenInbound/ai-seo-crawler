@@ -6,18 +6,34 @@ function DomainInput({ onStartAnalysis, onAnalysisComplete, onError }) {
   const [domain, setDomain] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const validateDomain = (domain) => {
-    const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
-    return domainRegex.test(domain);
+  const validateAndExtractDomain = (input) => {
+    try {
+      // Remove protocol if present
+      let cleanInput = input.replace(/^https?:\/\//, '');
+      
+      // Extract domain from URL with path
+      const domainPart = cleanInput.split('/')[0];
+      
+      // Validate domain format
+      const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
+      
+      if (!domainRegex.test(domainPart)) {
+        return { isValid: false, domain: null };
+      }
+      
+      return { isValid: true, domain: domainPart };
+    } catch (error) {
+      return { isValid: false, domain: null };
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const validation = validateAndExtractDomain(domain);
     
-    if (!validateDomain(cleanDomain)) {
-      onError('Please enter a valid domain (e.g., example.com)');
+    if (!validation.isValid) {
+      onError('Please enter a valid domain or URL (e.g., example.com or https://example.com/page)');
       return;
     }
 
@@ -26,7 +42,8 @@ function DomainInput({ onStartAnalysis, onAnalysisComplete, onError }) {
 
     try {
       const response = await axios.post('/api/crawler/analyze', {
-        domain: cleanDomain,
+        domain: validation.domain,
+        url: domain.startsWith('http') ? domain : null,
         forceRefresh: false
       });
 
@@ -89,14 +106,14 @@ function DomainInput({ onStartAnalysis, onAnalysisComplete, onError }) {
                 id="domain"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
-                placeholder="example.com"
+                placeholder="example.com or https://example.com/page"
                 className="block w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
                 required
                 disabled={isSubmitting}
               />
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              Enter just the domain name without http:// or https://
+              Enter a domain (example.com) or full URL (https://example.com/page) - we'll analyze the homepage
             </p>
           </div>
 

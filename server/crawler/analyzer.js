@@ -305,16 +305,37 @@ class ContentAnalyzer {
       '.author',
       '.byline',
       '[class*="author"]',
-      '[id*="author"]'
+      '[id*="author"]',
+      '.post-author',
+      '.article-author',
+      '.writer',
+      '[class*="writer"]',
+      '.posted-by',
+      '.written-by'
+    ];
+
+    // Enhanced author detection with text patterns
+    const authorTextPatterns = [
+      /\bby\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,        // "By John Doe"
+      /\bav\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,        // "Av John Doe" (Norwegian)
+      /\bforfatter:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i, // "Forfatter: John Doe"
+      /\bskrevet\s+av\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i, // "Skrevet av John Doe"
+      /\bauthor:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,  // "Author: John Doe"
+      /\bwritten\s+by\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i // "Written by John Doe"
     ];
 
     const hasAuthor = authorSelectors.some(selector => $(selector).length > 0);
     const authorBio = $('.author-bio, .author-description, [class*="author-bio"]').length > 0;
 
+    // Check for author in text content
+    const bodyText = $('body').text();
+    const textAuthorMatch = authorTextPatterns.some(pattern => pattern.test(bodyText));
+
     return {
-      hasAuthor,
+      hasAuthor: hasAuthor || textAuthorMatch,
       hasAuthorBio: authorBio,
-      authorElements: authorSelectors.filter(selector => $(selector).length > 0)
+      authorElements: authorSelectors.filter(selector => $(selector).length > 0),
+      detectedFromText: textAuthorMatch
     };
   }
 

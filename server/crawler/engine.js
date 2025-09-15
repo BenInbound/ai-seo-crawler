@@ -42,15 +42,19 @@ class CrawlerEngine {
     }
   }
 
-  async analyzeDomain(domain) {
+  async analyzeDomain(domain, specificUrl = null) {
     let crawlResultId = null;
     
     try {
-      // Normalize domain
+      // Normalize domain and determine target URL
       const normalizedDomain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      const targetUrl = specificUrl || `https://${normalizedDomain}`;
       const baseUrl = `https://${normalizedDomain}`;
 
       console.log(`Starting analysis for domain: ${normalizedDomain}`);
+      if (specificUrl) {
+        console.log(`Analyzing specific URL: ${specificUrl}`);
+      }
 
       // Check robots.txt with multi-strategy approach
       const robotsInfo = await this.robotsChecker.checkRobots(normalizedDomain, this.userAgent);
@@ -127,18 +131,19 @@ class CrawlerEngine {
       // Initialize browser
       await this.initBrowser();
 
-      // Crawl homepage
-      console.log(`Crawling homepage with user agent: ${selectedUserAgent.substring(0, 50)}...`);
-      const homepageData = await this.crawlPage(baseUrl, crawlDelay);
+      // Crawl target page
+      const pageType = specificUrl ? 'specific page' : 'homepage';
+      console.log(`Crawling ${pageType} with user agent: ${selectedUserAgent.substring(0, 50)}...`);
+      const pageData = await this.crawlPage(targetUrl, crawlDelay);
       console.log(`Page data extracted:`, {
-        title: homepageData.title,
-        wordCount: homepageData.wordCount,
-        hasStructuredData: (homepageData.structuredData?.length || 0) > 0,
-        statusCode: homepageData.statusCode
+        title: pageData.title,
+        wordCount: pageData.wordCount,
+        hasStructuredData: (pageData.structuredData?.length || 0) > 0,
+        statusCode: pageData.statusCode
       });
 
       // Analyze content
-      const analysis = await this.contentAnalyzer.analyzeContent(homepageData);
+      const analysis = await this.contentAnalyzer.analyzeContent(pageData);
       console.log(`Content analysis complete:`, {
         contentWordCount: analysis.content?.wordCount,
         hasDirectAnswer: analysis.content?.hasDirectAnswer,
@@ -156,7 +161,7 @@ class CrawlerEngine {
       // Prepare result data
       const resultData = {
         domain: normalizedDomain,
-        url: baseUrl,
+        url: targetUrl,
         overallScore: scores.overall,
         contentScore: scores.content,
         eatScore: scores.eat,
