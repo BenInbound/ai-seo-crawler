@@ -12,16 +12,20 @@ class ContentAnalyzer {
   async analyzeContent(pageData) {
     const $ = cheerio.load(pageData.html);
 
+    // Detect page type for context-aware analysis
+    const pageType = this.detectPageType($, pageData);
+
     return {
-      content: this.analyzeContentQuality($, pageData),
-      eat: this.analyzeEAT($, pageData),
+      pageType,
+      content: this.analyzeContentQuality($, pageData, pageType),
+      eat: this.analyzeEAT($, pageData, pageType),
       technical: this.analyzeTechnical($, pageData),
       structuredData: this.analyzeStructuredData(pageData),
-      aiReadiness: this.analyzeAIReadiness($, pageData)
+      aiReadiness: this.analyzeAIReadiness($, pageData, pageType)
     };
   }
 
-  analyzeContentQuality($, pageData) {
+  analyzeContentQuality($, pageData, pageType = 'page') {
     const textContent = pageData.textContent || '';
     const wordCount = pageData.wordCount || 0;
     
@@ -57,12 +61,9 @@ class ContentAnalyzer {
     };
   }
 
-  analyzeEAT($, pageData) {
-    // Author information detection
+  analyzeEAT($, pageData, pageType = 'page') {
+    // Author information detection (only relevant for blog/article pages)
     const authorInfo = this.detectAuthorInfo($);
-    
-    // About page detection
-    const hasAboutPage = this.detectAboutPage($);
     
     // Contact information
     const contactInfo = this.detectContactInfo($);
@@ -70,22 +71,29 @@ class ContentAnalyzer {
     // External citations and references
     const citations = this.detectCitations($, pageData);
     
-    // Content freshness
+    // Content freshness (mainly for blog/news content)
     const publishDate = this.extractPublishDate($);
     const lastUpdated = this.extractUpdateDate($);
     
     // Expertise indicators
     const expertiseIndicators = this.detectExpertiseIndicators($);
 
+    // Trust signals
+    const trustSignals = this.detectTrustSignals($);
+
+    // Page-specific trust factors
+    const pageSpecificFactors = this.analyzePageSpecificTrust($, pageType);
+
     return {
+      pageType,
       authorInfo,
-      hasAboutPage,
       contactInfo,
       citations,
       publishDate,
       lastUpdated,
       expertiseIndicators,
-      trustSignals: this.detectTrustSignals($)
+      trustSignals,
+      pageSpecificFactors
     };
   }
 
@@ -149,7 +157,7 @@ class ContentAnalyzer {
     };
   }
 
-  analyzeAIReadiness($, pageData) {
+  analyzeAIReadiness($, pageData, pageType = 'page') {
     const textContent = pageData.textContent || '';
     
     // Check for AI Overview optimization patterns
@@ -175,6 +183,111 @@ class ContentAnalyzer {
       featuredSnippetOptimization,
       conversationalTone: this.detectConversationalTone(textContent)
     };
+  }
+
+  // Page Type Detection
+  detectPageType($, pageData) {
+    const url = pageData.url || '';
+    const title = (pageData.title || '').toLowerCase();
+    const textContent = (pageData.textContent || '').toLowerCase();
+    
+    // URL-based detection
+    if (url.includes('/blog/') || url.includes('/blogg/') || url.includes('/article/') || url.includes('/post/')) {
+      return 'blog';
+    }
+    if (url.includes('/contact') || url.includes('/kontakt')) {
+      return 'contact';
+    }
+    if (url.includes('/about') || url.includes('/om-oss') || url.includes('/about-us')) {
+      return 'about';
+    }
+    if (url.includes('/faq') || url.includes('/help') || url.includes('/support')) {
+      return 'faq';
+    }
+    if (url.includes('/service') || url.includes('/product') || url.includes('/tjeneste')) {
+      return 'service';
+    }
+    
+    // Check if it's homepage (root or minimal path)
+    const urlPath = new URL(url).pathname;
+    if (urlPath === '/' || urlPath.length <= 3) {
+      return 'homepage';
+    }
+    
+    // Content-based detection
+    
+    // Blog/Article indicators
+    const hasBlogIndicators = [
+      this.detectAuthorInfo($).hasAuthor,
+      this.extractPublishDate($) !== null,
+      /\b(publisert|published|forfatter|author|av\s+[A-Z])/i.test(textContent),
+      $('[class*="author"], [class*="byline"], [class*="date"]').length > 0
+    ].filter(Boolean).length >= 2;
+    
+    if (hasBlogIndicators) {
+      return 'blog';
+    }
+    
+    // Contact page indicators
+    const hasContactIndicators = [
+      /\b(kontakt|contact|ring|call|email|addresse|address)\b/i.test(textContent),
+      $('form').length > 0,
+      /\+?\d{2,4}[\s\-]?\d{2,4}[\s\-]?\d{2,4}/g.test(textContent), // Phone numbers
+      /@[\w\.-]+\.\w+/g.test(textContent), // Email addresses
+      /\b(åpningstid|opening hours|besøk|visit)\b/i.test(textContent)
+    ].filter(Boolean).length >= 2;
+    
+    if (hasContactIndicators) {
+      return 'contact';
+    }
+    
+    // About page indicators
+    const hasAboutIndicators = [
+      /\b(om oss|about us|vår historie|our story|mission|visjon|vision|team|ansatte|employees)\b/i.test(textContent),
+      /\b(grunnlagt|founded|siden|since|established)\b/i.test(textContent),
+      title.includes('about') || title.includes('om oss')
+    ].filter(Boolean).length >= 1;
+    
+    if (hasAboutIndicators) {
+      return 'about';
+    }
+    
+    // FAQ page indicators
+    const hasFAQIndicators = [
+      /\b(spørsmål|questions|faq|frequently asked)\b/i.test(textContent),
+      $('h2, h3, h4').filter((i, el) => /\?/.test($(el).text())).length >= 3,
+      this.analyzeFAQ($).hasFAQSection
+    ].filter(Boolean).length >= 1;
+    
+    if (hasFAQIndicators) {
+      return 'faq';
+    }
+    
+    // Service/Product page indicators
+    const hasServiceIndicators = [
+      /\b(tjeneste|service|produkt|product|løsning|solution|funksjon|feature|pris|price|kjøp|buy)\b/i.test(textContent),
+      /\b(bestill|order|kontakt oss|contact us|få tilbud|get quote)\b/i.test(textContent),
+      $('.price, .pricing, [class*="price"]').length > 0
+    ].filter(Boolean).length >= 1;
+    
+    if (hasServiceIndicators) {
+      return 'service';
+    }
+    
+    // Homepage indicators (fallback)
+    const hasHomepageIndicators = [
+      /\b(velkommen|welcome|hjem|home|hovedside)\b/i.test(textContent),
+      $('nav, [role="navigation"]').length > 0,
+      $('.hero, [class*="hero"], [class*="banner"]').length > 0,
+      $('header').length > 0 && $('footer').length > 0
+    ].filter(Boolean).length >= 2;
+    
+    if (hasHomepageIndicators) {
+      return 'homepage';
+    }
+    
+    // Default fallback
+    return 'page';
   }
 
   // Helper methods
@@ -339,10 +452,6 @@ class ContentAnalyzer {
     };
   }
 
-  detectAboutPage($) {
-    const aboutLinks = $('a[href*="about"], a[href*="About"]').length > 0;
-    return aboutLinks;
-  }
 
   detectContactInfo($) {
     const contactPatterns = [
@@ -384,35 +493,140 @@ class ContentAnalyzer {
 
   extractPublishDate($) {
     const dateSelectors = [
+      // Standard HTML5 and schema markup
+      'time[datetime]',
       '[datetime]',
+      '[property="article:published_time"]',
+      '[name="article:published_time"]',
+      '[property="datePublished"]',
+      
+      // English selectors
       '.published',
       '.date',
+      '.post-date',
+      '.entry-date',
+      '.publish-date',
       '[class*="publish"]',
-      '[property="article:published_time"]'
+      '[class*="date"]',
+      '[id*="date"]',
+      
+      // Norwegian selectors
+      '.dato',
+      '.publisert',
+      '.opprettet',
+      '.blogg-dato',
+      '.artikkel-dato',
+      '[class*="dato"]',
+      '[class*="publiser"]',
+      '[id*="dato"]',
+      
+      // Common blog/CMS patterns
+      '.byline .date',
+      '.meta .date',
+      '.post-meta .date',
+      '.article-meta .date',
+      'header .date',
+      '.entry-meta time',
+      '.post-info .date'
     ];
 
+    // First try structured selectors
     for (const selector of dateSelectors) {
       const element = $(selector).first();
       if (element.length > 0) {
-        return element.attr('datetime') || element.text().trim();
+        const dateValue = element.attr('datetime') || 
+                         element.attr('content') || 
+                         element.text().trim();
+        if (dateValue && dateValue.length > 4) {
+          return dateValue;
+        }
       }
     }
+
+    // Fallback: search for date patterns in text
+    const datePatterns = [
+      // Norwegian date patterns
+      /(\d{1,2})\.\s?(januar|februar|mars|april|mai|juni|juli|august|september|oktober|november|desember)\s?(\d{4})/i,
+      /(\d{1,2})\.(\d{1,2})\.(\d{4})/,
+      // English patterns
+      /(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}/i,
+      // ISO patterns
+      /\d{4}-\d{2}-\d{2}/,
+      // General patterns
+      /\d{1,2}\/\d{1,2}\/\d{4}/
+    ];
+
+    const bodyText = $('body').text();
+    for (const pattern of datePatterns) {
+      const match = bodyText.match(pattern);
+      if (match) {
+        return match[0];
+      }
+    }
+
     return null;
   }
 
   extractUpdateDate($) {
     const updateSelectors = [
+      // Standard schema markup
+      '[property="article:modified_time"]',
+      '[name="article:modified_time"]',
+      '[property="dateModified"]',
+      'time[datetime][class*="updated"]',
+      'time[datetime][class*="modified"]',
+      
+      // English selectors
       '[class*="updated"]',
       '[class*="modified"]',
-      '[property="article:modified_time"]'
+      '[class*="last-modified"]',
+      '.last-updated',
+      '.modified-date',
+      '.update-date',
+      
+      // Norwegian selectors
+      '[class*="oppdatert"]',
+      '[class*="endret"]',
+      '[class*="sist-endret"]',
+      '.oppdatert',
+      '.endret',
+      '.sist-endret',
+      '.sist-oppdatert',
+      
+      // Common patterns
+      '.meta .updated',
+      '.post-meta .updated',
+      '.article-meta .updated'
     ];
 
     for (const selector of updateSelectors) {
       const element = $(selector).first();
       if (element.length > 0) {
-        return element.attr('datetime') || element.text().trim();
+        const dateValue = element.attr('datetime') || 
+                         element.attr('content') || 
+                         element.text().trim();
+        if (dateValue && dateValue.length > 4) {
+          return dateValue;
+        }
       }
     }
+
+    // Look for update text patterns
+    const updatePatterns = [
+      /oppdatert[:\s]*(\d{1,2})\.\s?(januar|februar|mars|april|mai|juni|juli|august|september|oktober|november|desember)\s?(\d{4})/i,
+      /sist endret[:\s]*(\d{1,2})\.\s?(januar|februar|mars|april|mai|juni|juli|august|september|oktober|november|desember)\s?(\d{4})/i,
+      /updated[:\s]*(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}/i,
+      /last modified[:\s]*(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}/i
+    ];
+
+    const bodyText = $('body').text();
+    for (const pattern of updatePatterns) {
+      const match = bodyText.match(pattern);
+      if (match) {
+        return match[0];
+      }
+    }
+
     return null;
   }
 
@@ -442,6 +656,113 @@ class ContentAnalyzer {
     if ($('footer').text().toLowerCase().includes('privacy')) trustSignals.push('privacy policy');
 
     return trustSignals;
+  }
+
+  analyzePageSpecificTrust($, pageType) {
+    const factors = {
+      type: pageType,
+      score: 0,
+      factors: []
+    };
+
+    switch (pageType) {
+      case 'homepage':
+        // Homepage should show company info, navigation, clear value prop
+        if ($('nav, [role="navigation"]').length > 0) {
+          factors.factors.push('clear navigation');
+          factors.score += 20;
+        }
+        if ($('.hero, [class*="hero"], [class*="value"]').length > 0) {
+          factors.factors.push('value proposition');
+          factors.score += 15;
+        }
+        if ($('footer').text().length > 100) {
+          factors.factors.push('comprehensive footer');
+          factors.score += 10;
+        }
+        break;
+
+      case 'about':
+        // About pages should have team info, company history, mission
+        const aboutText = $('body').text().toLowerCase();
+        if (/\b(team|ansatte|grunnlagt|founded|historie|history)\b/.test(aboutText)) {
+          factors.factors.push('company background');
+          factors.score += 25;
+        }
+        if (/\b(mission|visjon|vision|values|verdier)\b/.test(aboutText)) {
+          factors.factors.push('mission/vision');
+          factors.score += 20;
+        }
+        if ($('img[alt*="team"], img[alt*="person"], .team').length > 0) {
+          factors.factors.push('team photos');
+          factors.score += 15;
+        }
+        break;
+
+      case 'contact':
+        // Contact pages should have multiple contact methods, location, hours
+        const contactText = $('body').text();
+        if (/\+?\d{2,4}[\s\-]?\d{2,4}[\s\-]?\d{2,4}/.test(contactText)) {
+          factors.factors.push('phone number');
+          factors.score += 20;
+        }
+        if (/@[\w\.-]+\.\w+/.test(contactText)) {
+          factors.factors.push('email address');
+          factors.score += 15;
+        }
+        if ($('form').length > 0) {
+          factors.factors.push('contact form');
+          factors.score += 20;
+        }
+        if (/\b(addresse|address|location|lokasjon)\b/i.test(contactText)) {
+          factors.factors.push('physical address');
+          factors.score += 15;
+        }
+        break;
+
+      case 'service':
+        // Service pages should have clear benefits, pricing, social proof
+        if ($('.price, .pricing, [class*="price"]').length > 0) {
+          factors.factors.push('pricing information');
+          factors.score += 20;
+        }
+        if ($('.testimonial, [class*="review"], [class*="testimonial"]').length > 0) {
+          factors.factors.push('customer testimonials');
+          factors.score += 25;
+        }
+        if (/\b(garantie|guarantee|refund|pengene tilbake)\b/i.test($('body').text())) {
+          factors.factors.push('guarantee/refund policy');
+          factors.score += 15;
+        }
+        break;
+
+      case 'blog':
+        // Blog pages need author, date, category, related content
+        // These are handled in regular E-A-T analysis
+        factors.score = 100; // Full score since blog-specific factors are handled elsewhere
+        factors.factors.push('editorial content');
+        break;
+
+      case 'faq':
+        // FAQ pages should have comprehensive Q&A, search, categories
+        const questionCount = $('h2, h3, h4').filter((i, el) => /\?/.test($(el).text())).length;
+        if (questionCount >= 5) {
+          factors.factors.push(`${questionCount} questions answered`);
+          factors.score += Math.min(40, questionCount * 5);
+        }
+        if ($('[type="search"], .search').length > 0) {
+          factors.factors.push('search functionality');
+          factors.score += 20;
+        }
+        break;
+
+      default:
+        // Generic page - basic trust signals
+        factors.score = 50;
+        factors.factors.push('standard page');
+    }
+
+    return factors;
   }
 
   analyzeMobileOptimization($) {

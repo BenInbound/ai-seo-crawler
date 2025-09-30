@@ -17,22 +17,23 @@
     "vercel-build": "cd client && npm run build"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "axios": "^1.6.8",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
-    "puppeteer-core": "^21.0.0",
     "@sparticuz/chromium": "^119.0.0",
+    "axios": "^1.6.8",
     "cheerio": "^1.0.0-rc.12",
-    "robots-parser": "^3.0.1",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "rate-limiter-flexible": "^5.0.3"
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "puppeteer": "^24.22.3",
+    "puppeteer-core": "^21.0.0",
+    "rate-limiter-flexible": "^5.0.3",
+    "robots-parser": "^3.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0",
     "concurrently": "^8.2.2",
-    "jest": "^29.7.0",
     "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.0",
     "prettier": "^3.2.5"
   },
   "keywords": [

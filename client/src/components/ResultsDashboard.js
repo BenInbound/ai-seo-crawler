@@ -149,12 +149,12 @@ function ResultsDashboard({ result, onReset }) {
               <div className="flex items-center space-x-1 text-sm text-gray-500">
                 <ExternalLink className="w-4 h-4" />
                 <a 
-                  href={`https://${result.domain}`} 
+                  href={result.url || `https://${result.domain}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-blue-600 font-medium"
                 >
-                  {result.domain}
+                  {result.url || result.domain}
                 </a>
               </div>
             </div>

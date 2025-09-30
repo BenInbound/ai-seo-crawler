@@ -113,7 +113,7 @@ function DomainInput({ onStartAnalysis, onAnalysisComplete, onError }) {
               />
             </div>
             <p className="mt-2 text-sm text-gray-500">
-              Enter a domain (example.com) or full URL (https://example.com/page) - we'll analyze the homepage
+              Enter a domain (example.com) to analyze the homepage, or a full URL (https://example.com/page) to analyze that specific page
             </p>
           </div>
 

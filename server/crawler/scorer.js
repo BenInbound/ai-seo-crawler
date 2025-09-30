@@ -81,33 +81,224 @@ class ScoreCalculator {
   }
 
   calculateEATScore(eat) {
+    const pageType = eat.pageType || 'page';
     let score = 0;
 
-    // Author information (25 points)
-    if (eat.authorInfo.hasAuthor) score += 15;
+    // Page-type-specific scoring
+    switch (pageType) {
+      case 'blog':
+        score = this.calculateBlogEATScore(eat);
+        break;
+      case 'homepage':
+        score = this.calculateHomepageEATScore(eat);
+        break;
+      case 'about':
+        score = this.calculateAboutEATScore(eat);
+        break;
+      case 'contact':
+        score = this.calculateContactEATScore(eat);
+        break;
+      case 'service':
+        score = this.calculateServiceEATScore(eat);
+        break;
+      case 'faq':
+        score = this.calculateFAQEATScore(eat);
+        break;
+      default:
+        score = this.calculateGenericEATScore(eat);
+    }
+
+    return Math.min(100, score);
+  }
+
+  calculateBlogEATScore(eat) {
+    let score = 0;
+
+    // Author information (30 points) - Critical for blog content
+    if (eat.authorInfo.hasAuthor) score += 20;
     if (eat.authorInfo.hasAuthorBio) score += 10;
 
-    // About page and contact (15 points)
-    if (eat.hasAboutPage) score += 8;
-    if (eat.contactInfo.hasContact || eat.contactInfo.hasContactPage) score += 7;
+    // Contact information (10 points)
+    if (eat.contactInfo.hasContact || eat.contactInfo.hasContactPage) score += 10;
 
-    // Citations and references (20 points)
+    // Citations and references (25 points) - Important for credibility
     if (eat.citations.authorityCitations > 0) {
-      score += Math.min(15, eat.citations.authorityCitations * 3);
+      score += Math.min(20, eat.citations.authorityCitations * 4);
     }
     if (eat.citations.hasReferences) score += 5;
 
-    // Content freshness (15 points)
-    if (eat.publishDate) score += 7;
-    if (eat.lastUpdated) score += 8;
+    // Content freshness (20 points) - Very important for blogs
+    if (eat.publishDate) score += 10;
+    if (eat.lastUpdated) score += 10;
 
-    // Expertise indicators (15 points)
+    // Expertise indicators (10 points)
     score += Math.min(10, eat.expertiseIndicators.count * 2);
 
-    // Trust signals (10 points)
-    score += Math.min(10, eat.trustSignals.length * 2);
+    // Trust signals (5 points)
+    score += Math.min(5, eat.trustSignals.length * 1);
 
-    return Math.min(100, score);
+    return score;
+  }
+
+  calculateHomepageEATScore(eat) {
+    let score = 0;
+
+    // Author info not relevant for homepage (0 points)
+    
+    // Contact information (25 points) - Very important for homepage
+    if (eat.contactInfo.hasContact || eat.contactInfo.hasContactPage) score += 25;
+
+    // Citations less important (10 points)
+    if (eat.citations.authorityCitations > 0) score += 10;
+
+    // Freshness not critical for homepage (5 points)
+    if (eat.lastUpdated) score += 5;
+
+    // Expertise indicators (15 points)
+    score += Math.min(15, eat.expertiseIndicators.count * 3);
+
+    // Trust signals (20 points) - Very important for homepage
+    score += Math.min(20, eat.trustSignals.length * 4);
+
+    // Page-specific factors (25 points)
+    if (eat.pageSpecificFactors) {
+      score += Math.min(25, eat.pageSpecificFactors.score * 0.25);
+    }
+
+    return score;
+  }
+
+  calculateAboutEATScore(eat) {
+    let score = 0;
+
+    // Author info not critical (5 points)
+    if (eat.authorInfo.hasAuthor) score += 5;
+
+    // Contact information (20 points)
+    if (eat.contactInfo.hasContact || eat.contactInfo.hasContactPage) score += 20;
+
+    // Citations less important (10 points)
+    if (eat.citations.authorityCitations > 0) score += 10;
+
+    // Freshness not critical (5 points)
+    if (eat.lastUpdated) score += 5;
+
+    // Expertise indicators (20 points) - Important for about pages
+    score += Math.min(20, eat.expertiseIndicators.count * 4);
+
+    // Trust signals (15 points)
+    score += Math.min(15, eat.trustSignals.length * 3);
+
+    // Page-specific factors (25 points) - Company background, mission, team
+    if (eat.pageSpecificFactors) {
+      score += Math.min(25, eat.pageSpecificFactors.score * 0.25);
+    }
+
+    return score;
+  }
+
+  calculateContactEATScore(eat) {
+    let score = 0;
+
+    // Author info not relevant (0 points)
+    
+    // Contact information (40 points) - Most important for contact pages
+    if (eat.contactInfo.hasContact || eat.contactInfo.hasContactPage) score += 40;
+
+    // Citations not relevant (0 points)
+
+    // Freshness not critical (5 points)
+    if (eat.lastUpdated) score += 5;
+
+    // Expertise indicators (10 points)
+    score += Math.min(10, eat.expertiseIndicators.count * 2);
+
+    // Trust signals (15 points)
+    score += Math.min(15, eat.trustSignals.length * 3);
+
+    // Page-specific factors (30 points) - Phone, email, address, form
+    if (eat.pageSpecificFactors) {
+      score += Math.min(30, eat.pageSpecificFactors.score * 0.3);
+    }
+
+    return score;
+  }
+
+  calculateServiceEATScore(eat) {
+    let score = 0;
+
+    // Author info less important (5 points)
+    if (eat.authorInfo.hasAuthor) score += 5;
+
+    // Contact information (20 points)
+    if (eat.contactInfo.hasContact || eat.contactInfo.hasContactPage) score += 20;
+
+    // Citations somewhat important (15 points)
+    if (eat.citations.authorityCitations > 0) score += 15;
+
+    // Freshness somewhat important (10 points)
+    if (eat.lastUpdated) score += 10;
+
+    // Expertise indicators (20 points)
+    score += Math.min(20, eat.expertiseIndicators.count * 4);
+
+    // Trust signals (15 points)
+    score += Math.min(15, eat.trustSignals.length * 3);
+
+    // Page-specific factors (15 points) - Pricing, testimonials, guarantees
+    if (eat.pageSpecificFactors) {
+      score += Math.min(15, eat.pageSpecificFactors.score * 0.15);
+    }
+
+    return score;
+  }
+
+  calculateFAQEATScore(eat) {
+    let score = 0;
+
+    // Author info not critical (0 points)
+    
+    // Contact information (15 points)
+    if (eat.contactInfo.hasContact || eat.contactInfo.hasContactPage) score += 15;
+
+    // Citations somewhat important (15 points)
+    if (eat.citations.authorityCitations > 0) score += 15;
+
+    // Freshness somewhat important (10 points)
+    if (eat.lastUpdated) score += 10;
+
+    // Expertise indicators (25 points) - Important for FAQ credibility
+    score += Math.min(25, eat.expertiseIndicators.count * 5);
+
+    // Trust signals (15 points)
+    score += Math.min(15, eat.trustSignals.length * 3);
+
+    // Page-specific factors (20 points) - Number of questions, search functionality
+    if (eat.pageSpecificFactors) {
+      score += Math.min(20, eat.pageSpecificFactors.score * 0.2);
+    }
+
+    return score;
+  }
+
+  calculateGenericEATScore(eat) {
+    let score = 0;
+
+    // Balanced scoring for unknown page types
+    if (eat.authorInfo.hasAuthor) score += 10;
+    if (eat.authorInfo.hasAuthorBio) score += 5;
+    if (eat.contactInfo.hasContact || eat.contactInfo.hasContactPage) score += 15;
+    if (eat.citations.authorityCitations > 0) score += 10;
+    if (eat.publishDate) score += 5;
+    if (eat.lastUpdated) score += 5;
+    score += Math.min(15, eat.expertiseIndicators.count * 3);
+    score += Math.min(15, eat.trustSignals.length * 3);
+    
+    if (eat.pageSpecificFactors) {
+      score += Math.min(20, eat.pageSpecificFactors.score * 0.2);
+    }
+
+    return score;
   }
 
   calculateTechnicalScore(technical) {
@@ -313,16 +504,6 @@ class ScoreCalculator {
       });
     }
 
-    // About page
-    if (!eat.hasAboutPage) {
-      recommendations.push({
-        category: 'E-A-T (Authority)',
-        priority: 'medium',
-        issue: 'Missing About page',
-        recommendation: 'Create a comprehensive About page detailing your expertise, credentials, and experience.',
-        impact: 'Medium - About pages build site authority'
-      });
-    }
 
     // Contact information
     if (!eat.contactInfo.hasContact && !eat.contactInfo.hasContactPage) {
