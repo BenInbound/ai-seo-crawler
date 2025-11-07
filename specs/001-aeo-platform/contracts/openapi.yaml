@@ -1,0 +1,870 @@
+openapi: 3.0.3
+info:
+  title: Multi-Client AEO Platform API
+  version: 1.0.0
+  description: |
+    API for managing AI-powered Answer Engine Optimization crawling, analysis, and scoring across multiple organizations and projects.
+
+    Features include:
+    - Multi-tenant organization management with role-based access
+    - Project-based crawl configuration
+    - Intelligent page-type-aware scoring (0-100 scale)
+    - AI-powered recommendations
+    - Historical tracking and comparison
+    - Token usage monitoring
+  contact:
+    name: AEO Platform Support
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3001/api
+    description: Development server
+  - url: https://your-vercel-app.vercel.app/api
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Organizations
+    description: Organization management operations
+  - name: Organization Members
+    description: Organization membership and role management
+  - name: Projects
+    description: Project configuration and management
+  - name: Crawl Runs
+    description: Crawl execution and monitoring
+  - name: Pages
+    description: Page and snapshot retrieval
+  - name: Scores
+    description: AEO scoring and AI recommendations
+  - name: Dashboard
+    description: Analytics and reporting
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Create new user account
+      description: Register a new user account with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - name
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: SecurePass123!
+                name:
+                  type: string
+                  example: John Doe
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate and get JWT token
+      description: Login with email and password to receive authentication token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT bearer token
+                  expiresIn:
+                    type: integer
+                    description: Token expiration in seconds
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      email:
+                        type: string
+                      name:
+                        type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user info
+      responses:
+        '200':
+          description: User information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  organizations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        name:
+                          type: string
+                        role:
+                          type: string
+                          enum: [admin, editor, viewer]
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /organizations:
+    get:
+      tags:
+        - Organizations
+      summary: List user's organizations
+      parameters:
+        - $ref: '#/components/parameters/pagination_page'
+        - $ref: '#/components/parameters/pagination_limit'
+      responses:
+        '200':
+          description: Organizations retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Organization'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags:
+        - Organizations
+      summary: Create new organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+      responses:
+        '201':
+          description: Organization created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+
+  /organizations/{orgId}:
+    parameters:
+      - $ref: '#/components/parameters/orgId'
+    get:
+      tags:
+        - Organizations
+      summary: Get organization details
+      responses:
+        '200':
+          description: Organization retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+
+    patch:
+      tags:
+        - Organizations
+      summary: Update organization (admin only)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Organization updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+
+  /organizations/{orgId}/members:
+    parameters:
+      - $ref: '#/components/parameters/orgId'
+    get:
+      tags:
+        - Organization Members
+      summary: List members
+      responses:
+        '200':
+          description: Members retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrganizationMember'
+
+    post:
+      tags:
+        - Organization Members
+      summary: Invite user (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - role
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [admin, editor, viewer]
+      responses:
+        '201':
+          description: Member invited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationMember'
+
+  /organizations/{orgId}/projects:
+    parameters:
+      - $ref: '#/components/parameters/orgId'
+    get:
+      tags:
+        - Projects
+      summary: List projects
+      responses:
+        '200':
+          description: Projects retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+
+    post:
+      tags:
+        - Projects
+      summary: Create project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - targetUrl
+              properties:
+                name:
+                  type: string
+                targetUrl:
+                  type: string
+                  format: uri
+                config:
+                  type: object
+                  properties:
+                    depthLimit:
+                      type: integer
+                      default: 3
+                    tokenLimit:
+                      type: integer
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /projects/{projectId}/crawls:
+    parameters:
+      - $ref: '#/components/parameters/projectId'
+    post:
+      tags:
+        - Crawl Runs
+      summary: Start new crawl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                runType:
+                  type: string
+                  enum: [full, sitemap_only, sample, delta]
+                  default: full
+      responses:
+        '201':
+          description: Crawl started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlRun'
+
+    get:
+      tags:
+        - Crawl Runs
+      summary: List crawl runs
+      responses:
+        '200':
+          description: Crawl runs retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrawlRun'
+
+  /crawls/{crawlId}:
+    parameters:
+      - $ref: '#/components/parameters/crawlId'
+    get:
+      tags:
+        - Crawl Runs
+      summary: Get crawl status
+      responses:
+        '200':
+          description: Crawl status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlRun'
+
+  /crawls/{crawlId}/pause:
+    parameters:
+      - $ref: '#/components/parameters/crawlId'
+    post:
+      tags:
+        - Crawl Runs
+      summary: Pause crawl
+      responses:
+        '200':
+          description: Crawl paused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlRun'
+
+  /crawls/{crawlId}/resume:
+    parameters:
+      - $ref: '#/components/parameters/crawlId'
+    post:
+      tags:
+        - Crawl Runs
+      summary: Resume crawl
+      responses:
+        '200':
+          description: Crawl resumed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlRun'
+
+  /projects/{projectId}/pages:
+    parameters:
+      - $ref: '#/components/parameters/projectId'
+    get:
+      tags:
+        - Pages
+      summary: List pages with filters
+      parameters:
+        - name: pageType
+          in: query
+          schema:
+            type: string
+            enum: [homepage, product, solution, blog, resource, conversion]
+        - name: minScore
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+        - name: maxScore
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+      responses:
+        '200':
+          description: Pages retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Page'
+
+  /pages/{pageId}:
+    parameters:
+      - $ref: '#/components/parameters/pageId'
+    get:
+      tags:
+        - Pages
+      summary: Get page details
+      responses:
+        '200':
+          description: Page retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+
+  /pages/{pageId}/rescore:
+    parameters:
+      - $ref: '#/components/parameters/pageId'
+    post:
+      tags:
+        - Scores
+      summary: Rescore without refetch
+      responses:
+        '201':
+          description: Rescore triggered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Score'
+
+  /scores/{scoreId}:
+    parameters:
+      - $ref: '#/components/parameters/scoreId'
+    get:
+      tags:
+        - Scores
+      summary: Get detailed score
+      responses:
+        '200':
+          description: Score retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Score'
+
+  /projects/{projectId}/dashboard:
+    parameters:
+      - $ref: '#/components/parameters/projectId'
+    get:
+      tags:
+        - Dashboard
+      summary: Get dashboard data
+      responses:
+        '200':
+          description: Dashboard data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recentCrawls:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrawlRun'
+                  scoreTrends:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        averageScore:
+                          type: number
+
+  /projects/{projectId}/compare:
+    parameters:
+      - $ref: '#/components/parameters/projectId'
+    get:
+      tags:
+        - Dashboard
+      summary: Compare two crawl runs
+      parameters:
+        - name: crawlId1
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: crawlId2
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Comparison data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scoreDelta:
+                    type: number
+                  improvedPages:
+                    type: integer
+                  declinedPages:
+                    type: integer
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    orgId:
+      name: orgId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    projectId:
+      name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    crawlId:
+      name: crawlId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    pageId:
+      name: pageId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    scoreId:
+      name: scoreId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    pagination_page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+
+    pagination_limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+
+  schemas:
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        role:
+          type: string
+          enum: [admin, editor, viewer]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrganizationMember:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, editor, viewer]
+        joinedAt:
+          type: string
+          format: date-time
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        targetUrl:
+          type: string
+          format: uri
+        config:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+
+    CrawlRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        runType:
+          type: string
+          enum: [full, sitemap_only, sample, delta]
+        status:
+          type: string
+          enum: [queued, running, paused, completed, failed]
+        pagesDiscovered:
+          type: integer
+        pagesProcessed:
+          type: integer
+        tokenUsage:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Page:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        projectId:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        pageType:
+          type: string
+          enum: [homepage, product, solution, blog, resource, conversion]
+        currentScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        lastCrawledAt:
+          type: string
+          format: date-time
+
+    Score:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        pageId:
+          type: string
+          format: uuid
+        snapshotId:
+          type: string
+          format: uuid
+        rubricVersion:
+          type: string
+        overallScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        criteriaScores:
+          type: object
+          additionalProperties:
+            type: integer
+        aiRecommendations:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              text:
+                type: string
+              references:
+                type: array
+                items:
+                  type: string
+        scoredAt:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -2,17 +2,31 @@ const robotsParser = require('robots-parser');
 const { fetch } = require('./package-fix');
 
 class RobotsChecker {
-  constructor() {
+  constructor(projectUserAgent = null) {
     this.cache = new Map();
     this.cacheTimeout = 60 * 60 * 1000; // 1 hour
-    
+
+    // Support project-specific user agent for multi-tenant crawling
+    this.projectUserAgent = projectUserAgent || process.env.USER_AGENT || 'AEO-Platform-Bot/1.0';
+
     // Multiple user agent strategies for ethical analysis
     this.userAgents = {
-      crawler: 'AI-Search-Crawler/1.0 (AI Search Readiness Analysis)',
+      crawler: this.projectUserAgent,
       chrome: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       firefox: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0',
       safari: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2.1 Safari/605.1.15'
     };
+  }
+
+  /**
+   * Set project-specific user agent for multi-tenant support
+   * @param {string} userAgent - Custom user agent string
+   */
+  setProjectUserAgent(userAgent) {
+    this.projectUserAgent = userAgent;
+    this.userAgents.crawler = userAgent;
+    // Clear cache when user agent changes
+    this.cache.clear();
   }
 
   async checkRobots(domain, userAgent = 'AI-Search-Crawler') {
@@ -38,11 +52,11 @@ class RobotsChecker {
       }
 
       const robots = robotsParser(robotsUrl, robotsTxt);
-      
+
       // Check multiple user agent strategies
       const crawlerResult = this.checkUserAgentAccess(robots, robotsTxt, userAgent, '/');
       const browserResults = this.checkBrowserUserAgents(robots, robotsTxt, '/');
-      
+
       const result = {
         exists: response.ok,
         canCrawl: crawlerResult.canCrawl,
@@ -68,7 +82,7 @@ class RobotsChecker {
 
     } catch (error) {
       console.error(`Error checking robots.txt for ${domain}:`, error.message);
-      
+
       // Return permissive defaults on error
       const fallback = {
         exists: false,
@@ -99,11 +113,11 @@ class RobotsChecker {
     try {
       const isAllowed = robots.isAllowed(path, userAgent);
       const crawlDelay = robots.getCrawlDelay(userAgent) || robots.getCrawlDelay('*') || 1;
-      
+
       // Handle undefined result from robots-parser (means no explicit disallow rule)
       // For homepage (/), undefined should be treated as allowed
       const canCrawl = isAllowed === false ? false : true;
-      
+
       return {
         canCrawl: canCrawl,
         userAgent: userAgent,
@@ -124,12 +138,12 @@ class RobotsChecker {
     // Check if browser user agents are allowed (common SEO tool strategy)
     for (const [name, userAgent] of Object.entries(this.userAgents)) {
       if (name === 'crawler') continue; // Skip crawler agent
-      
+
       try {
         const isAllowed = robots.isAllowed(path, userAgent);
         // Handle undefined result - treat as allowed unless explicitly false
         const canCrawl = isAllowed === false ? false : true;
-        
+
         if (canCrawl) {
           return {
             canCrawl: true,
@@ -153,7 +167,7 @@ class RobotsChecker {
 
   getRecommendations(crawlerResult, browserResults) {
     const recommendations = [];
-    
+
     if (crawlerResult.canCrawl) {
       recommendations.push('✅ SEO analysis allowed with crawler identification');
     } else if (browserResults.canCrawl) {
@@ -163,7 +177,7 @@ class RobotsChecker {
       recommendations.push('❌ All automated access blocked - manual analysis required');
       recommendations.push('💡 Contact site owner for analysis permission');
     }
-    
+
     return recommendations;
   }
 
@@ -175,7 +189,7 @@ class RobotsChecker {
 
     for (const line of lines) {
       const trimmed = line.trim();
-      
+
       if (trimmed.toLowerCase().startsWith('user-agent:')) {
         currentUserAgent = trimmed.substring(11).trim();
         isRelevantSection = currentUserAgent === userAgent || currentUserAgent === '*';

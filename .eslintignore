@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+client/build/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Minified files
+*.min.js
+
+# Vercel
+.vercel/
+
+# Next.js
+.next/
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Database
+*.db
+
+# Logs
+*.log

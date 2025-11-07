@@ -5,6 +5,36 @@ const helmet = require('helmet');
 const path = require('path');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 
+// Initialize database
+const { supabaseAdmin } = require('./services/database/supabase');
+const UserModel = require('./models/user');
+const OrganizationModel = require('./models/organization');
+const OrganizationMemberModel = require('./models/organization-member');
+const ProjectModel = require('./models/project');
+const CrawlRunModel = require('./models/crawl-run');
+const PageModel = require('./models/page');
+const SnapshotModel = require('./models/snapshot');
+// const ScoreModel = require('./models/score'); // TODO: Create score model
+
+// Set Supabase client on all models
+UserModel.setSupabaseClient(supabaseAdmin);
+OrganizationModel.setSupabaseClient(supabaseAdmin);
+OrganizationMemberModel.setSupabaseClient(supabaseAdmin);
+ProjectModel.setSupabaseClient(supabaseAdmin);
+CrawlRunModel.setSupabaseClient(supabaseAdmin);
+PageModel.setSupabaseClient(supabaseAdmin);
+SnapshotModel.setSupabaseClient(supabaseAdmin);
+// ScoreModel.setSupabaseClient(supabaseAdmin); // TODO: Uncomment when score model is created
+
+// Import middleware
+const { requestLogger, performanceLogger, errorLogger } = require('./middleware/logger');
+const { errorHandler, notFoundHandler } = require('./middleware/error-handler');
+const { optionalAuthenticate } = require('./middleware/auth');
+
+// Import routes
+const authRoutes = require('./api/routes/auth');
+const organizationRoutes = require('./api/routes/organizations');
+const projectRoutes = require('./api/routes/projects');
 const crawlerRoutes = require('./api/routes/crawler');
 
 const app = express();
@@ -35,9 +65,23 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Logging middleware
+app.use(requestLogger);
+app.use(performanceLogger(1000)); // Log requests slower than 1 second
+
+// Rate limiting
 app.use(rateLimiterMiddleware);
 
+// Optional authentication (attaches user if token present)
+// Use this for public endpoints that behave differently when authenticated
+// For protected routes, use the authenticate middleware directly in the route
+app.use(optionalAuthenticate);
+
 // API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/organizations', organizationRoutes);
+app.use('/api', projectRoutes); // Projects uses full paths like /organizations/:orgId/projects
 app.use('/api/crawler', crawlerRoutes);
 
 // Health check
@@ -59,21 +103,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong!'
-  });
-});
+// Must be after all routes
+app.use(errorLogger); // Log errors with context
+app.use(errorHandler); // Handle and format errors
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({
-    error: 'Not Found',
-    message: 'The requested resource was not found.'
-  });
-});
+// 404 handler for unmatched routes (must be last)
+app.use(notFoundHandler);
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {

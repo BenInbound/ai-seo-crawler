@@ -11,6 +11,9 @@
     "start": "node server/index.js",
     "test": "jest",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,json,md}\"",
     "setup": "npm install && cd client && npm install",
     "install-client": "cd client && npm install",
     "postinstall": "cd client && npm install",
@@ -18,23 +21,33 @@
   },
   "dependencies": {
     "@sparticuz/chromium": "^119.0.0",
+    "@supabase/supabase-js": "^2.80.0",
     "axios": "^1.6.8",
+    "bcrypt": "^6.0.0",
+    "bullmq": "^5.63.0",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "helmet": "^7.1.0",
+    "ioredis": "^5.8.2",
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^6.8.1",
+    "pdf-parse": "^2.4.5",
     "puppeteer": "^24.22.3",
     "puppeteer-core": "^21.0.0",
     "rate-limiter-flexible": "^5.0.3",
-    "robots-parser": "^3.0.1"
+    "robots-parser": "^3.0.1",
+    "tiktoken": "^1.0.22"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
+    "jest-openapi": "^0.14.2",
     "nodemon": "^3.1.0",
-    "prettier": "^3.2.5"
+    "prettier": "^3.2.5",
+    "supertest": "^7.1.4"
   },
   "keywords": [
     "seo",

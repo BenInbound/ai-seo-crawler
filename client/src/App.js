@@ -1,90 +1,137 @@
-import React, { useState } from 'react';
-import DomainInput from './components/DomainInput';
-import LoadingScreen from './components/LoadingScreen';
-import ResultsDashboard from './components/ResultsDashboard';
-import Header from './components/Header';
-import Footer from './components/Footer';
+/**
+ * App Component
+ *
+ * Main application component with routing and authentication.
+ * Manages route protection and context providers.
+ *
+ * Based on plan.md frontend architecture for User Story 1
+ */
+
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { OrgProvider } from './contexts/OrgContext';
+import authService from './services/auth';
+import LoginPage from './pages/Login';
+import Register from './components/auth/Register';
+import Dashboard from './pages/Dashboard';
+
+// Initialize auth service with AuthContext
+function AuthInitializer({ children }) {
+  const auth = useAuth();
+
+  React.useEffect(() => {
+    authService.initialize(auth);
+  }, [auth]);
+
+  return children;
+}
+
+// Protected Route wrapper component
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+// Public Route wrapper - redirects to dashboard if already authenticated
+function PublicRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
 
 function App() {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState(null);
-  const [error, setError] = useState(null);
-
-  const handleAnalysis = (result) => {
-    setAnalysisResult(result);
-    setIsAnalyzing(false);
-    setError(null);
-  };
-
-  const handleError = (errorMessage) => {
-    setError(errorMessage);
-    setIsAnalyzing(false);
-    setAnalysisResult(null);
-  };
-
-  const handleStartAnalysis = () => {
-    setIsAnalyzing(true);
-    setError(null);
-    setAnalysisResult(null);
-  };
-
-  const handleReset = () => {
-    setIsAnalyzing(false);
-    setAnalysisResult(null);
-    setError(null);
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-8">
-        {!isAnalyzing && !analysisResult && !error && (
-          <DomainInput
-            onStartAnalysis={handleStartAnalysis}
-            onAnalysisComplete={handleAnalysis}
-            onError={handleError}
-          />
-        )}
+    <Router>
+      <AuthProvider>
+        <AuthInitializer>
+          <OrgProvider>
+            <Routes>
+              {/* Public routes */}
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <LoginPage />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <PublicRoute>
+                    <Register />
+                  </PublicRoute>
+                }
+              />
 
-        {isAnalyzing && <LoadingScreen />}
+              {/* Protected routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-        {analysisResult && (
-          <ResultsDashboard
-            result={analysisResult}
-            onReset={handleReset}
-          />
-        )}
+              {/* Default redirect */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {error && (
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium text-red-800">Analysis Failed</h3>
-                  <p className="text-red-700 mt-1">{error}</p>
-                </div>
-              </div>
-              <div className="mt-4">
-                <button
-                  onClick={handleReset}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Try Again
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      <Footer />
-    </div>
+              {/* 404 fallback */}
+              <Route
+                path="*"
+                element={
+                  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                    <div className="text-center">
+                      <h1 className="text-4xl font-bold text-gray-900 mb-4">404</h1>
+                      <p className="text-gray-600 mb-6">Page not found</p>
+                      <a
+                        href="/dashboard"
+                        className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                      >
+                        Go to Dashboard
+                      </a>
+                    </div>
+                  </div>
+                }
+              />
+            </Routes>
+          </OrgProvider>
+        </AuthInitializer>
+      </AuthProvider>
+    </Router>
   );
 }
 

@@ -1,3 +1,18 @@
+/**
+ * Crawler Engine - Multi-Tenant Support
+ *
+ * Updated for User Story 2 multi-tenant crawling with project-specific configuration.
+ * Integrates with new models: CrawlRun, Page, PageSnapshot
+ * Supports project-specific user agents, depth limits, and URL filtering.
+ *
+ * Changes for multi-tenancy:
+ * - Constructor accepts project configuration (projectId, config, userAgent)
+ * - Works with CrawlRun model for progress tracking
+ * - Uses Page model for URL deduplication
+ * - Creates PageSnapshot records for versioned content storage
+ * - Respects project-specific excluded_patterns and depth_limit
+ */
+
 const puppeteer = require(process.env.NODE_ENV === 'production' ? 'puppeteer-core' : 'puppeteer');
 const chromium = require('@sparticuz/chromium');
 const axios = require('axios');
@@ -8,14 +23,26 @@ const { ScoreCalculator } = require('./scorer');
 const URL = require('url').URL;
 
 class CrawlerEngine {
-  constructor() {
-    this.robotsChecker = new RobotsChecker();
+  constructor(projectConfig = {}) {
+    // Multi-tenant configuration support
+    this.projectId = projectConfig.projectId || null;
+    this.projectConfig = projectConfig.config || {};
+    this.userAgent =
+      projectConfig.userAgent || process.env.USER_AGENT || 'AEO-Platform-Bot/1.0';
+
+    // Initialize with project-specific user agent
+    this.robotsChecker = new RobotsChecker(this.userAgent);
     this.contentAnalyzer = new ContentAnalyzer();
     this.scoreCalculator = new ScoreCalculator();
     this.browser = null;
-    this.userAgent = 'AI-Search-Crawler/1.0 (AI Search Readiness Analysis)';
-    this.crawlDelay = parseInt(process.env.CRAWLER_DELAY_MS) || 2000;
+    this.crawlDelay = parseInt(process.env.CRAWL_DELAY_MS) || 2000;
     this.timeout = parseInt(process.env.CRAWLER_TIMEOUT_MS) || 30000;
+
+    // Project-specific limits
+    this.depthLimit = this.projectConfig.depth_limit || 3;
+    this.sampleSize = this.projectConfig.sample_size || null;
+    this.tokenLimit = this.projectConfig.token_limit || null;
+    this.excludedPatterns = this.projectConfig.excluded_patterns || [];
   }
 
   async initBrowser() {
@@ -23,23 +50,23 @@ class CrawlerEngine {
       try {
         // Configure for Vercel serverless environment
         const isProduction = process.env.NODE_ENV === 'production';
-        
+
         if (isProduction) {
           // Get fonts path if available
           const fontsPath = await chromium.font || null;
-          
+
           this.browser = await puppeteer.launch({
             args: [
               ...chromium.args,
               '--hide-scrollbars',
               '--disable-web-security',
               '--disable-features=VizDisplayCompositor',
-              fontsPath ? `--font-render-hinting=none` : '',
+              fontsPath ? '--font-render-hinting=none' : ''
             ].filter(Boolean),
             defaultViewport: chromium.defaultViewport,
             executablePath: await chromium.executablePath(),
             headless: chromium.headless,
-            ignoreHTTPSErrors: true,
+            ignoreHTTPSErrors: true
           });
         } else {
           this.browser = await puppeteer.launch({
@@ -66,18 +93,18 @@ class CrawlerEngine {
 
   async crawlPageHTTP(url) {
     console.log(`Using HTTP fallback for: ${url}`);
-    
+
     try {
       const response = await axios.get(url, {
         headers: {
-          'User-Agent': this.userAgent,
+          'User-Agent': this.userAgent
         },
         timeout: this.timeout,
-        maxRedirects: 5,
+        maxRedirects: 5
       });
 
       const $ = cheerio.load(response.data);
-      
+
       // Extract structured data
       const structuredData = [];
       $('script[type="application/ld+json"]').each((i, el) => {
@@ -95,7 +122,7 @@ class CrawlerEngine {
         metaDescription: $('meta[name="description"]').attr('content') || '',
         html: response.data,
         structuredData,
-        
+
         ogData: {
           title: $('meta[property="og:title"]').attr('content') || '',
           description: $('meta[property="og:description"]').attr('content') || '',
@@ -146,7 +173,7 @@ class CrawlerEngine {
   }
 
   async analyzeDomain(domain, specificUrl = null) {
-    
+
     try {
       // Normalize domain and determine target URL
       const normalizedDomain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -160,18 +187,18 @@ class CrawlerEngine {
 
       // Check robots.txt with multi-strategy approach
       const robotsInfo = await this.robotsChecker.checkRobots(normalizedDomain, this.userAgent);
-      console.log(`Robots.txt check result:`, {
+      console.log('Robots.txt check result:', {
         exists: robotsInfo.exists,
         canCrawl: robotsInfo.canCrawl,
         canCrawlAsBrowser: robotsInfo.canCrawlAsBrowser,
         bestUserAgent: robotsInfo.bestUserAgent?.substring(0, 50) + '...'
       });
-      
+
       // Determine the best crawling strategy
       let canProceed = false;
       let selectedUserAgent = this.userAgent;
       let crawlStrategy = 'blocked';
-      
+
       if (robotsInfo.canCrawl) {
         // Preferred: Use our identified crawler
         canProceed = true;
@@ -187,7 +214,7 @@ class CrawlerEngine {
       } else {
         // Completely blocked - create informative blocked result
         console.log(`❌ All crawling blocked for ${normalizedDomain}`);
-        
+
         const failedData = {
           domain: normalizedDomain,
           url: baseUrl,
@@ -196,7 +223,7 @@ class CrawlerEngine {
           eatScore: 0,
           technicalScore: 0,
           structuredDataScore: 0,
-          analysisData: { 
+          analysisData: {
             robotsInfo,
             error: 'All crawling strategies blocked by robots.txt',
             suggestion: 'This website comprehensively blocks automated access. Manual analysis required.'
@@ -223,7 +250,7 @@ class CrawlerEngine {
 
       // Use crawl delay from robots.txt if specified
       const crawlDelay = Math.max(robotsInfo.crawlDelay * 1000, this.crawlDelay);
-      
+
       // Update user agent for this analysis
       this.userAgent = selectedUserAgent;
 
@@ -233,10 +260,10 @@ class CrawlerEngine {
       // Crawl target page - use fallback if Puppeteer failed
       const pageType = specificUrl ? 'specific page' : 'homepage';
       console.log(`Crawling ${pageType} with user agent: ${selectedUserAgent.substring(0, 50)}...`);
-      const pageData = this.browser 
+      const pageData = this.browser
         ? await this.crawlPage(targetUrl, crawlDelay)
         : await this.crawlPageHTTP(targetUrl);
-      console.log(`Page data extracted:`, {
+      console.log('Page data extracted:', {
         title: pageData.title,
         wordCount: pageData.wordCount,
         hasStructuredData: (pageData.structuredData?.length || 0) > 0,
@@ -245,7 +272,7 @@ class CrawlerEngine {
 
       // Analyze content
       const analysis = await this.contentAnalyzer.analyzeContent(pageData);
-      console.log(`Content analysis complete:`, {
+      console.log('Content analysis complete:', {
         contentWordCount: analysis.content?.wordCount,
         hasDirectAnswer: analysis.content?.hasDirectAnswer,
         hasStructuredData: analysis.structuredData?.hasStructuredData,
@@ -254,7 +281,7 @@ class CrawlerEngine {
 
       // Calculate scores
       const scores = this.scoreCalculator.calculateScores(analysis);
-      console.log(`Scores calculated:`, scores);
+      console.log('Scores calculated:', scores);
 
       // Generate recommendations
       const recommendations = this.scoreCalculator.generateRecommendations(analysis, scores);
@@ -319,7 +346,7 @@ class CrawlerEngine {
 
   async crawlPage(url, delay = 2000) {
     const page = await this.browser.newPage();
-    
+
     try {
       // Set user agent
       await page.setUserAgent(this.userAgent);
@@ -329,7 +356,7 @@ class CrawlerEngine {
 
       // Enable request interception to block unnecessary resources
       await page.setRequestInterception(true);
-      
+
       page.on('request', (req) => {
         const resourceType = req.resourceType();
         if (['image', 'font', 'media'].includes(resourceType)) {
@@ -360,7 +387,7 @@ class CrawlerEngine {
           title: document.title,
           metaDescription: document.querySelector('meta[name=\"description\"]')?.getAttribute('content') || '',
           html: document.documentElement.outerHTML,
-          
+
           // Structured data
           structuredData: Array.from(document.querySelectorAll('script[type=\"application/ld+json\"]'))
             .map(script => {

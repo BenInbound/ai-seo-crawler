@@ -55,6 +55,9 @@ Thumbs.db
 *.swo
 *~
 
+# AI agent files (may contain credentials/tokens)
+.claude/
+
 # Temporary files
 tmp/
 temp/
@@ -86,3 +89,23 @@ temp/
 
 # TernJS port file
 .tern-port
+
+# Redis dump files
+dump.rdb
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Next.js (if used for client)
+.next/
+next-env.d.ts
+
+# Vercel
+.vercel/
+
+# PDF files (temporary processing)
+*.pdf.tmp
