@@ -62,6 +62,7 @@ async function requireAuth(req, res, next) {
 async function requireProjectAccess(req, res, next) {
   try {
     const projectId = req.params.projectId || req.project?.id;
+    console.log('[requireProjectAccess] Checking access for user:', req.userId, 'project:', projectId);
 
     if (!projectId) {
       return res.status(400).json({
@@ -71,6 +72,7 @@ async function requireProjectAccess(req, res, next) {
     }
 
     const hasAccess = await hasProjectAccess(req.userId, projectId);
+    console.log('[requireProjectAccess] Has access result:', hasAccess);
 
     if (!hasAccess) {
       return res.status(403).json({
@@ -80,7 +82,7 @@ async function requireProjectAccess(req, res, next) {
     }
 
     // Load project for later use
-    const project = await ProjectModel.findById(projectId);
+    const project = await ProjectModel.findProjectById(projectId);
     if (!project) {
       return res.status(404).json({
         error: 'Not Found',
@@ -202,12 +204,12 @@ router.post(
         project_id: projectId,
         run_type: runType,
         config_snapshot: {
-          base_url: project.base_url,
+          base_url: project.target_url, // Use target_url from project
           user_agent: project.user_agent || process.env.USER_AGENT || 'AEO-Platform-Bot/1.0',
-          depth_limit: project.depth_limit || 3,
-          sample_size: project.sample_size || null,
-          token_limit: project.token_limit || null,
-          excluded_patterns: project.excluded_patterns || []
+          depth_limit: project.config?.depth_limit || 3,
+          sample_size: project.config?.sample_size || null,
+          token_limit: project.config?.token_limit || null,
+          excluded_patterns: project.config?.excluded_patterns || []
         },
         created_by: req.userId
       });
@@ -253,7 +255,7 @@ router.get('/projects/:projectId/crawls', requireAuth, requireProjectAccess, asy
     const { projectId } = req.params;
 
     // Get all crawl runs for project
-    const crawlRuns = await CrawlRunModel.findByProject(projectId);
+    const crawlRuns = await CrawlRunModel.listByProject(projectId);
 
     // Transform to API format
     const data = crawlRuns.map(run => ({

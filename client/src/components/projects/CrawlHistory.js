@@ -31,7 +31,7 @@ function CrawlHistory({ projectId, onViewCrawl }) {
   const fetchCrawls = async () => {
     try {
       const response = await crawlsAPI.list(projectId);
-      setCrawls(response.data.data || []);
+      setCrawls(response.data || []);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch crawls:', err);

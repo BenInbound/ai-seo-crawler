@@ -116,7 +116,7 @@ async function getOrganizationMembers(organizationId) {
       invited_at,
       joined_at,
       invited_by,
-      user:users (
+      user:users!user_id (
         id,
         email,
         name,

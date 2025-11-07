@@ -82,7 +82,7 @@ app.use(optionalAuthenticate);
 app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api', projectRoutes); // Projects uses full paths like /organizations/:orgId/projects
-app.use('/api/crawler', crawlerRoutes);
+app.use('/api', crawlerRoutes); // Crawler routes use full paths like /projects/:projectId/crawls
 
 // Health check
 app.get('/api/health', (req, res) => {

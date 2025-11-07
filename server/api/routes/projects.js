@@ -308,4 +308,222 @@ router.delete('/projects/:projectId', requireAuth, requireProjectAccess, async (
   }
 });
 
+/**
+ * GET /projects/:projectId/pages
+ * List pages in a project with scores and filtering
+ *
+ * Query parameters:
+ * - minScore: Minimum overall score (0-100)
+ * - maxScore: Maximum overall score (0-100)
+ * - pageType: Filter by page type (homepage, product, solution, blog, resource, conversion)
+ * - limit: Number of results per page (default 50)
+ * - offset: Pagination offset (default 0)
+ * - orderBy: Sort field (score, url, type, date) - default 'score'
+ * - order: Sort order (asc, desc) - default 'desc'
+ *
+ * For User Story 3: Page scoring with filtering
+ */
+router.get('/projects/:projectId/pages', requireAuth, requireProjectAccess, async (req, res) => {
+  try {
+    const PageModel = require('../../models/page');
+    const PageScoreModel = require('../../models/score');
+
+    const {
+      minScore,
+      maxScore,
+      pageType,
+      limit = 50,
+      offset = 0,
+      orderBy = 'score',
+      order = 'desc'
+    } = req.query;
+
+    // Build filter options
+    const options = {
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10)
+    };
+
+    if (minScore !== undefined) {
+      options.minScore = parseInt(minScore, 10);
+    }
+
+    if (maxScore !== undefined) {
+      options.maxScore = parseInt(maxScore, 10);
+    }
+
+    if (pageType) {
+      options.pageType = pageType;
+    }
+
+    // Get pages with scores
+    const pages = await PageModel.listByProject(req.projectId, options);
+
+    // For each page, get its current score if available
+    const pagesWithScores = await Promise.all(
+      pages.map(async page => {
+        if (page.current_score_id) {
+          const score = await PageScoreModel.getById(page.current_score_id);
+          return {
+            id: page.id,
+            url: page.url,
+            page_type: page.page_type,
+            first_discovered_at: page.first_discovered_at,
+            last_crawled_at: page.last_crawled_at,
+            overall_score: score?.overall_score || null,
+            scored_at: score?.scored_at || null,
+            rubric_version: score?.rubric_version || null,
+            criteria_scores: score?.criteria_scores || {},
+            criteria_explanations: score?.criteria_explanations || {},
+            ai_recommendations: score?.ai_recommendations || []
+          };
+        }
+        return {
+          id: page.id,
+          url: page.url,
+          page_type: page.page_type,
+          first_discovered_at: page.first_discovered_at,
+          last_crawled_at: page.last_crawled_at,
+          overall_score: null,
+          scored_at: null
+        };
+      })
+    );
+
+    // Apply filtering
+    let filteredPages = pagesWithScores;
+
+    if (minScore !== undefined) {
+      filteredPages = filteredPages.filter(
+        p => p.overall_score !== null && p.overall_score >= parseInt(minScore, 10)
+      );
+    }
+
+    if (maxScore !== undefined) {
+      filteredPages = filteredPages.filter(
+        p => p.overall_score !== null && p.overall_score <= parseInt(maxScore, 10)
+      );
+    }
+
+    if (pageType) {
+      filteredPages = filteredPages.filter(p => p.page_type === pageType);
+    }
+
+    // Apply sorting
+    filteredPages.sort((a, b) => {
+      let aVal, bVal;
+
+      switch (orderBy) {
+        case 'score':
+          aVal = a.overall_score || 0;
+          bVal = b.overall_score || 0;
+          break;
+        case 'url':
+          aVal = a.url || '';
+          bVal = b.url || '';
+          break;
+        case 'type':
+          aVal = a.page_type || '';
+          bVal = b.page_type || '';
+          break;
+        case 'date':
+          aVal = new Date(a.scored_at || 0);
+          bVal = new Date(b.scored_at || 0);
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return order === 'asc' ? -1 : 1;
+      if (aVal > bVal) return order === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    res.status(200).json({
+      projectId: req.projectId,
+      pages: filteredPages,
+      pagination: {
+        limit: parseInt(limit, 10),
+        offset: parseInt(offset, 10),
+        total: filteredPages.length
+      },
+      filters: {
+        minScore: minScore ? parseInt(minScore, 10) : null,
+        maxScore: maxScore ? parseInt(maxScore, 10) : null,
+        pageType: pageType || null
+      }
+    });
+  } catch (error) {
+    console.error('Get project pages error:', error);
+    res.status(500).json({
+      error: 'Failed to get project pages',
+      details: error.message
+    });
+  }
+});
+
+/**
+ * GET /pages/:pageId
+ * Get single page details with score
+ *
+ * For User Story 3: Page detail view
+ */
+router.get('/pages/:pageId', requireAuth, async (req, res) => {
+  try {
+    const PageModel = require('../../models/page');
+    const PageScoreModel = require('../../models/score');
+    const { pageId } = req.params;
+
+    // Get page
+    const page = await PageModel.getById(pageId);
+
+    if (!page) {
+      return res.status(404).json({
+        error: 'Not Found',
+        details: 'Page not found'
+      });
+    }
+
+    // Check project access
+    const hasAccess = await hasProjectAccess(req.userId, page.project_id);
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        details: 'You do not have access to this page'
+      });
+    }
+
+    // Get current score if available
+    let scoreData = null;
+    if (page.current_score_id) {
+      scoreData = await PageScoreModel.getById(page.current_score_id);
+    }
+
+    res.status(200).json({
+      id: page.id,
+      url: page.url,
+      page_type: page.page_type,
+      project_id: page.project_id,
+      first_discovered_at: page.first_discovered_at,
+      last_crawled_at: page.last_crawled_at,
+      overall_score: scoreData?.overall_score || null,
+      scored_at: scoreData?.scored_at || null,
+      rubric_version: scoreData?.rubric_version || null,
+      criteria_scores: scoreData?.criteria_scores || {},
+      criteria_explanations: scoreData?.criteria_explanations || {},
+      ai_recommendations: scoreData?.ai_recommendations || [],
+      ai_tokens_used: scoreData?.ai_tokens_used || 0,
+      ai_cache_key: scoreData?.ai_cache_key || null,
+      snapshot_id: scoreData?.snapshot_id || null
+    });
+  } catch (error) {
+    console.error('Get page error:', error);
+    res.status(500).json({
+      error: 'Failed to get page',
+      details: error.message
+    });
+  }
+});
+
 module.exports = router;

@@ -1,0 +1,193 @@
+{
+  "documentType": "default-aeo-rubric",
+  "version": "1.0",
+  "description": "Default AEO scoring rubric. Replace with processed PDF principles for production use.",
+  "lastUpdated": "2025-11-07",
+  "categories": [
+    {
+      "name": "Content Quality & AI Optimization",
+      "weight": 0.25,
+      "criteria": [
+        {
+          "name": "direct_answer",
+          "description": "Page provides clear, direct answer in opening paragraph that matches search intent",
+          "scoringGuidance": "0-40: No clear answer or answer is buried deep in content. 41-60: Answer present but not prominent or clear. 61-80: Clear answer in first few paragraphs. 81-100: Immediate, comprehensive answer in first 2-3 sentences.",
+          "bestPractices": [
+            "Place the most direct answer in the first 2-3 sentences",
+            "Use clear, concise language without jargon",
+            "Match the specific search intent (definition, how-to, comparison, etc.)",
+            "Include key entities and facts upfront"
+          ]
+        },
+        {
+          "name": "question_coverage",
+          "description": "Page addresses related questions and provides comprehensive coverage of the topic",
+          "scoringGuidance": "0-40: Only addresses main topic, no related questions. 41-60: Touches on 1-2 related questions. 61-80: Covers 3-5 related questions well. 81-100: Comprehensive coverage with FAQ section addressing 6+ related questions.",
+          "bestPractices": [
+            "Include an FAQ section with common related questions",
+            "Use question-based headings (H2/H3)",
+            "Address 'people also ask' type questions",
+            "Provide both quick answers and detailed explanations"
+          ]
+        },
+        {
+          "name": "readability",
+          "description": "Content is clear, scannable, and easy to understand with good formatting",
+          "scoringGuidance": "0-40: Dense text, no structure, difficult to read. 41-60: Basic structure but could be clearer. 61-80: Well-structured with lists and headings. 81-100: Excellent formatting with short paragraphs, lists, tables, and visual hierarchy.",
+          "bestPractices": [
+            "Use short paragraphs (2-4 sentences)",
+            "Include bullet points and numbered lists",
+            "Use descriptive headings and subheadings",
+            "Add tables for comparisons or data",
+            "Maintain 8th-grade reading level or below for broad topics"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "E-A-T Signals",
+      "weight": 0.25,
+      "criteria": [
+        {
+          "name": "eeat_signals",
+          "description": "Page demonstrates expertise, authoritativeness, and trustworthiness through author credentials, citations, and trust indicators",
+          "scoringGuidance": "0-40: No author info, no citations, no trust signals. 41-60: Basic author info OR some citations. 61-80: Clear author credentials AND multiple citations. 81-100: Expert author with credentials, multiple authoritative citations, and trust indicators (about page, contact info).",
+          "bestPractices": [
+            "Include author bio with relevant credentials",
+            "Add publication and last-updated dates",
+            "Cite authoritative sources with links",
+            "Link to detailed about page and contact information",
+            "Show industry certifications or affiliations"
+          ]
+        },
+        {
+          "name": "outbound_links",
+          "description": "Page includes quality outbound links to authoritative sources and references",
+          "scoringGuidance": "0-40: No outbound links or only low-quality links. 41-60: 1-2 outbound links to decent sources. 61-80: 3-5 quality outbound links to authoritative sites. 81-100: 6+ outbound links to highly authoritative, relevant sources.",
+          "bestPractices": [
+            "Link to government, academic, or industry-leading sources",
+            "Use descriptive anchor text for citations",
+            "Include links in context, not just a reference list",
+            "Verify all external links are working and HTTPS",
+            "Balance internal and external links appropriately"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Technical SEO",
+      "weight": 0.25,
+      "criteria": [
+        {
+          "name": "performance",
+          "description": "Page loads quickly with good Core Web Vitals",
+          "scoringGuidance": "0-40: Slow load time (>5s), poor vitals. 41-60: Moderate speed (3-5s). 61-80: Fast load (<3s), decent vitals. 81-100: Excellent performance (<1.5s), all vitals in green.",
+          "bestPractices": [
+            "Optimize images (WebP format, proper sizing)",
+            "Minimize JavaScript and CSS",
+            "Use browser caching",
+            "Implement lazy loading for below-fold content",
+            "Achieve LCP <2.5s, FID <100ms, CLS <0.1"
+          ]
+        },
+        {
+          "name": "indexing",
+          "description": "Page is properly indexed with meta tags, canonical URLs, and no indexing issues",
+          "scoringGuidance": "0-40: Noindex, missing meta tags, major issues. 41-60: Indexable but missing some meta tags. 61-80: Good meta tags and canonical URL. 81-100: Perfect indexing setup with all meta tags, canonical, HTTPS, mobile-friendly.",
+          "bestPractices": [
+            "Include title tag (50-60 chars) and meta description (150-160 chars)",
+            "Set canonical URL correctly",
+            "Use HTTPS",
+            "Ensure mobile-friendly with proper viewport",
+            "Include Open Graph and Twitter Card tags",
+            "Submit to Google Search Console"
+          ]
+        },
+        {
+          "name": "internal_linking",
+          "description": "Page has good internal linking structure connecting to related content",
+          "scoringGuidance": "0-40: No internal links or orphaned page. 41-60: 1-2 internal links. 61-80: 3-5 contextual internal links. 81-100: 6+ well-placed internal links with descriptive anchors.",
+          "bestPractices": [
+            "Include 5-10 contextual internal links",
+            "Use descriptive anchor text (not 'click here')",
+            "Link to related articles and pillar content",
+            "Ensure proper site navigation and breadcrumbs",
+            "Maintain logical information architecture"
+          ]
+        },
+        {
+          "name": "accessibility",
+          "description": "Page is accessible with proper semantic HTML, alt text, and ARIA labels",
+          "scoringGuidance": "0-40: Major accessibility issues. 41-60: Some alt text and basic semantics. 61-80: Good accessibility with alt text and semantic HTML. 81-100: Excellent accessibility with WCAG AA compliance.",
+          "bestPractices": [
+            "Use semantic HTML (header, nav, main, article, footer)",
+            "Add alt text to all images",
+            "Ensure sufficient color contrast",
+            "Make interactive elements keyboard accessible",
+            "Use ARIA labels where appropriate",
+            "Test with screen readers"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Structured Data",
+      "weight": 0.25,
+      "criteria": [
+        {
+          "name": "schema_markup",
+          "description": "Page includes appropriate Schema.org structured data markup",
+          "scoringGuidance": "0-40: No schema markup. 41-60: Basic schema (Article or WebPage). 61-80: Multiple schema types including FAQ or HowTo. 81-100: Comprehensive schema with nested entities and all relevant types.",
+          "bestPractices": [
+            "Implement Article schema with author, datePublished, dateModified",
+            "Add FAQPage schema for Q&A sections",
+            "Include HowTo schema for step-by-step guides",
+            "Add BreadcrumbList schema for navigation",
+            "Use Organization schema with logo and social links",
+            "Validate with Google's Rich Results Test",
+            "Consider Product, Review, or Event schema where applicable"
+          ]
+        }
+      ]
+    }
+  ],
+  "pageTypeRubrics": {
+    "homepage": {
+      "description": "Homepage scoring emphasizes brand trust, navigation, and overview content",
+      "emphasizedCriteria": ["eeat_signals", "internal_linking", "schema_markup"],
+      "deemphasizedCriteria": ["direct_answer", "question_coverage"]
+    },
+    "blog": {
+      "description": "Blog post scoring emphasizes content quality, E-A-T, and comprehensive answers",
+      "emphasizedCriteria": ["direct_answer", "question_coverage", "eeat_signals", "outbound_links"],
+      "deemphasizedCriteria": []
+    },
+    "product": {
+      "description": "Product page scoring emphasizes clear value proposition, specifications, and conversion elements",
+      "emphasizedCriteria": ["direct_answer", "schema_markup", "performance"],
+      "deemphasizedCriteria": ["question_coverage"]
+    },
+    "solution": {
+      "description": "Solution page scoring emphasizes problem-solution fit and comprehensive explanation",
+      "emphasizedCriteria": ["direct_answer", "question_coverage", "internal_linking"],
+      "deemphasizedCriteria": []
+    },
+    "resource": {
+      "description": "Resource page scoring emphasizes depth, citations, and comprehensive coverage",
+      "emphasizedCriteria": ["question_coverage", "eeat_signals", "outbound_links", "schema_markup"],
+      "deemphasizedCriteria": []
+    },
+    "conversion": {
+      "description": "Conversion page scoring emphasizes clarity, trust signals, and technical performance",
+      "emphasizedCriteria": ["direct_answer", "eeat_signals", "performance", "accessibility"],
+      "deemphasizedCriteria": ["question_coverage"]
+    }
+  },
+  "notes": [
+    "This is a default rubric based on industry best practices for Answer Engine Optimization",
+    "For production use, process actual AEO principle PDFs using the pdf-processor service",
+    "PDFs should be placed in server/data/aeo-guides/ and processed via the processAeoGuide function",
+    "Processed principles will be saved to server/data/aeo-principles/ with timestamps",
+    "Update this file after processing real PDF guides to reflect official AEO principles"
+  ]
+}

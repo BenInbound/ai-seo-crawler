@@ -121,10 +121,25 @@ const aiQueue = new Queue(QUEUE_NAMES.AI, {
  * @returns {Promise<object>} Job instance
  */
 async function addCrawlJob(data) {
-  return crawlQueue.add(JOB_TYPES.CRAWL, data, {
-    jobId: data.crawlRunId,
-    priority: data.priority || 1
+  // Add timeout to prevent hanging when Redis is unavailable
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Queue operation timed out - Redis may be unavailable')), 5000);
   });
+
+  try {
+    const job = await Promise.race([
+      crawlQueue.add(JOB_TYPES.CRAWL, data, {
+        jobId: data.crawlRunId,
+        priority: data.priority || 1
+      }),
+      timeoutPromise
+    ]);
+    return job;
+  } catch (error) {
+    console.warn('Failed to add crawl job to queue (continuing anyway):', error.message);
+    // Return a mock job object so the crawler route can continue
+    return { id: data.crawlRunId, state: 'failed', failedReason: error.message };
+  }
 }
 
 /**

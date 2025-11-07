@@ -15,6 +15,8 @@ import authService from './services/auth';
 import LoginPage from './pages/Login';
 import Register from './components/auth/Register';
 import Dashboard from './pages/Dashboard';
+import ProjectDetail from './pages/ProjectDetail';
+import PageDetail from './pages/PageDetail';
 
 // Initialize auth service with AuthContext
 function AuthInitializer({ children }) {
@@ -102,6 +104,22 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projects/:projectId"
+                element={
+                  <ProtectedRoute>
+                    <ProjectDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pages/:pageId"
+                element={
+                  <ProtectedRoute>
+                    <PageDetail />
                   </ProtectedRoute>
                 }
               />

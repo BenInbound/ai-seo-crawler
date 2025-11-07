@@ -185,44 +185,44 @@ Based on plan.md structure:
 
 ### Data Models for User Story 3
 
-- [ ] T069 [US3] Create PageScore model in server/models/score.js
+- [x] T069 [US3] Create PageScore model in server/models/score.js
 
 ### AI Services for User Story 3
 
-- [ ] T070 [P] [US3] Setup OpenAI API client in server/services/ai/client.js
-- [ ] T071 [P] [US3] Implement one-time PDF processor for AEO guides in server/services/ai/pdf-processor.js
-- [ ] T072 [US3] Process AEO principle PDFs and store distilled rules in database or config file
-- [ ] T073 [P] [US3] Implement content summarizer in server/services/ai/summarizer.js
+- [x] T070 [P] [US3] Setup OpenAI API client in server/services/ai/client.js
+- [x] T071 [P] [US3] Implement one-time PDF processor for AEO guides in server/services/ai/pdf-processor.js
+- [x] T072 [US3] Process AEO principle PDFs and store distilled rules in database or config file
+- [x] T073 [P] [US3] Implement content summarizer in server/services/ai/summarizer.js
 
 ### Scoring Engine for User Story 3
 
-- [ ] T074 [US3] Implement page-type detection in server/crawler/analyzer.js
-- [ ] T075 [US3] Update scorer for 0-100 scale in server/crawler/scorer.js
-- [ ] T076 [US3] Create type-specific rubrics in server/crawler/rubrics/ directory
-- [ ] T077 [US3] Implement rubric application logic with simple averaging for overall score
-- [ ] T078 [US3] Create scoring job processor in server/services/jobs/processors/score.js
+- [x] T074 [US3] Implement page-type detection in server/crawler/analyzer.js
+- [x] T075 [US3] Update scorer for 0-100 scale in server/crawler/scorer.js
+- [x] T076 [US3] Create type-specific rubrics in server/crawler/rubrics/ directory
+- [x] T077 [US3] Implement rubric application logic with simple averaging for overall score
+- [x] T078 [US3] Create scoring job processor in server/services/jobs/processors/score.js
 
 ### API Routes for User Story 3
 
-- [ ] T079 [US3] Implement score retrieval routes in server/api/routes/scores.js (GET /scores/:scoreId)
-- [ ] T080 [US3] Implement page list route with score filtering in server/api/routes/projects.js (GET /projects/:projectId/pages)
+- [x] T079 [US3] Implement score retrieval routes in server/api/routes/scores.js (GET /scores/:scoreId)
+- [x] T080 [US3] Implement page list route with score filtering in server/api/routes/projects.js (GET /projects/:projectId/pages)
 
 ### Frontend Components for User Story 3
 
-- [ ] T081 [P] [US3] Create pages table component with filters in client/src/components/pages/PageTable.js
-- [ ] T082 [P] [US3] Create page detail component in client/src/components/pages/PageDetail.js
-- [ ] T083 [P] [US3] Create score breakdown display in client/src/components/scoring/ScoreBreakdown.js
+- [x] T081 [P] [US3] Create pages table component with filters in client/src/components/pages/PageTable.js
+- [x] T082 [P] [US3] Create page detail component in client/src/components/pages/PageDetail.js
+- [x] T083 [P] [US3] Create score breakdown display in client/src/components/scoring/ScoreBreakdown.js
 
 ### Frontend Pages for User Story 3
 
-- [ ] T084 [US3] Create page detail page in client/src/pages/PageDetail.js
+- [x] T084 [US3] Create page detail page in client/src/pages/PageDetail.js
 
 ### Integration & Validation for User Story 3
 
-- [ ] T085 [US3] Test page-type detection accuracy on diverse sample pages
-- [ ] T086 [US3] Verify type-specific rubrics apply correctly (homepage vs blog vs product)
-- [ ] T087 [US3] Validate score determinism (same content = same score)
-- [ ] T088 [US3] Verify overall score calculation as simple average
+- [x] T085 [US3] Test page-type detection accuracy on diverse sample pages
+- [x] T086 [US3] Verify type-specific rubrics apply correctly (homepage vs blog vs product)
+- [x] T087 [US3] Validate score determinism (same content = same score)
+- [x] T088 [US3] Verify overall score calculation as simple average
 
 **Checkpoint**: All core scoring functionality should now be operational
 

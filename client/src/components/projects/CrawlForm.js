@@ -56,10 +56,10 @@ function CrawlForm({ projectId, onSuccess, onCancel }) {
 
     try {
       const response = await crawlsAPI.start(projectId, formData);
-      console.log('Crawl started:', response.data);
+      console.log('Crawl started:', response);
 
       if (onSuccess) {
-        onSuccess(response.data);
+        onSuccess(response);
       }
     } catch (err) {
       console.error('Failed to start crawl:', err);

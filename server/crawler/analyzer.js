@@ -186,108 +186,115 @@ class ContentAnalyzer {
   }
 
   // Page Type Detection
+  // Returns one of 6 standard page types: homepage, product, solution, blog, resource, conversion
+  // Based on FR-034 (page-type-aware scoring)
   detectPageType($, pageData) {
     const url = pageData.url || '';
     const title = (pageData.title || '').toLowerCase();
     const textContent = (pageData.textContent || '').toLowerCase();
-    
-    // URL-based detection
-    if (url.includes('/blog/') || url.includes('/blogg/') || url.includes('/article/') || url.includes('/post/')) {
-      return 'blog';
-    }
-    if (url.includes('/contact') || url.includes('/kontakt')) {
-      return 'contact';
-    }
-    if (url.includes('/about') || url.includes('/om-oss') || url.includes('/about-us')) {
-      return 'about';
-    }
-    if (url.includes('/faq') || url.includes('/help') || url.includes('/support')) {
-      return 'faq';
-    }
-    if (url.includes('/service') || url.includes('/product') || url.includes('/tjeneste')) {
-      return 'service';
-    }
-    
+
     // Check if it's homepage (root or minimal path)
     const urlPath = new URL(url).pathname;
     if (urlPath === '/' || urlPath.length <= 3) {
       return 'homepage';
     }
-    
-    // Content-based detection
-    
-    // Blog/Article indicators
+
+    // URL-based detection patterns
+    const urlPatterns = {
+      blog: ['/blog/', '/blogg/', '/article/', '/post/', '/news/'],
+      product: ['/product/', '/produkt/', '/shop/', '/buy/', '/item/'],
+      solution: ['/solution/', '/løsning/', '/service/', '/tjeneste/', '/feature/'],
+      resource: ['/resource/', '/guide/', '/tutorial/', '/documentation/', '/docs/', '/help/', '/support/', '/faq/'],
+      conversion: ['/pricing/', '/price/', '/contact/', '/kontakt/', '/signup/', '/register/', '/demo/', '/trial/', '/get-started/']
+    };
+
+    for (const [type, patterns] of Object.entries(urlPatterns)) {
+      if (patterns.some(pattern => url.includes(pattern))) {
+        return type;
+      }
+    }
+
+    // Content-based detection with priority order
+
+    // 1. Blog/Article indicators (highest priority for content pages)
     const hasBlogIndicators = [
       this.detectAuthorInfo($).hasAuthor,
       this.extractPublishDate($) !== null,
-      /\b(publisert|published|forfatter|author|av\s+[A-Z])/i.test(textContent),
-      $('[class*="author"], [class*="byline"], [class*="date"]').length > 0
+      /\b(publisert|published|forfatter|author|av\s+[A-Z]|written by|posted by)/i.test(textContent),
+      $('[class*="author"], [class*="byline"], [class*="date"], [class*="publish"]').length > 0,
+      $('article').length > 0
     ].filter(Boolean).length >= 2;
-    
+
     if (hasBlogIndicators) {
       return 'blog';
     }
-    
-    // Contact page indicators
-    const hasContactIndicators = [
-      /\b(kontakt|contact|ring|call|email|addresse|address)\b/i.test(textContent),
-      $('form').length > 0,
-      /\+?\d{2,4}[\s\-]?\d{2,4}[\s\-]?\d{2,4}/g.test(textContent), // Phone numbers
-      /@[\w\.-]+\.\w+/g.test(textContent), // Email addresses
-      /\b(åpningstid|opening hours|besøk|visit)\b/i.test(textContent)
+
+    // 2. Conversion page indicators (forms, CTAs, pricing)
+    const hasConversionIndicators = [
+      $('form[class*="contact"], form[class*="signup"], form[class*="register"]').length > 0,
+      /\b(get started|sign up|free trial|request demo|contact us|book a demo|start free|subscribe)\b/i.test(textContent),
+      $('.price, .pricing, [class*="price"], [class*="plan"]').length > 0,
+      $('[class*="cta"], [class*="call-to-action"]').length > 0,
+      /\b(kontakt oss|få tilbud|bestill|order now|buy now|purchase)\b/i.test(textContent)
     ].filter(Boolean).length >= 2;
-    
-    if (hasContactIndicators) {
-      return 'contact';
+
+    if (hasConversionIndicators) {
+      return 'conversion';
     }
-    
-    // About page indicators
-    const hasAboutIndicators = [
-      /\b(om oss|about us|vår historie|our story|mission|visjon|vision|team|ansatte|employees)\b/i.test(textContent),
-      /\b(grunnlagt|founded|siden|since|established)\b/i.test(textContent),
-      title.includes('about') || title.includes('om oss')
-    ].filter(Boolean).length >= 1;
-    
-    if (hasAboutIndicators) {
-      return 'about';
+
+    // 3. Product page indicators
+    const hasProductIndicators = [
+      /\b(produkt|product|buy|kjøp|price|pris|add to cart|legg i handlekurv|specifications|specs)\b/i.test(textContent),
+      $('.price, .pricing, [class*="price"]').length > 0,
+      $('[class*="product"], [class*="item"]').length > 0,
+      /\b(features|benefits|fordeler|technical details|dimensions)\b/i.test(textContent),
+      $('button[class*="buy"], button[class*="cart"], button[class*="purchase"]').length > 0
+    ].filter(Boolean).length >= 2;
+
+    if (hasProductIndicators) {
+      return 'product';
     }
-    
-    // FAQ page indicators
-    const hasFAQIndicators = [
-      /\b(spørsmål|questions|faq|frequently asked)\b/i.test(textContent),
-      $('h2, h3, h4').filter((i, el) => /\?/.test($(el).text())).length >= 3,
-      this.analyzeFAQ($).hasFAQSection
-    ].filter(Boolean).length >= 1;
-    
-    if (hasFAQIndicators) {
-      return 'faq';
+
+    // 4. Solution page indicators
+    const hasSolutionIndicators = [
+      /\b(solution|løsning|service|tjeneste|how we|hvordan vi|our approach|vår tilnærming)\b/i.test(textContent),
+      /\b(problem|utfordring|challenge|need|behov|pain point)\b/i.test(textContent),
+      /\b(benefit|fordel|advantage|result|resultat|outcome)\b/i.test(textContent),
+      title.includes('solution') || title.includes('løsning') || title.includes('service')
+    ].filter(Boolean).length >= 2;
+
+    if (hasSolutionIndicators) {
+      return 'solution';
     }
-    
-    // Service/Product page indicators
-    const hasServiceIndicators = [
-      /\b(tjeneste|service|produkt|product|løsning|solution|funksjon|feature|pris|price|kjøp|buy)\b/i.test(textContent),
-      /\b(bestill|order|kontakt oss|contact us|få tilbud|get quote)\b/i.test(textContent),
-      $('.price, .pricing, [class*="price"]').length > 0
-    ].filter(Boolean).length >= 1;
-    
-    if (hasServiceIndicators) {
-      return 'service';
+
+    // 5. Resource page indicators (guides, tutorials, documentation)
+    const hasResourceIndicators = [
+      /\b(guide|veiledning|tutorial|how to|hvordan|documentation|docs|learn|lær|reference)\b/i.test(textContent),
+      /\b(step|steg|instruction|instruction|tips|best practices|examples|eksempler)\b/i.test(textContent),
+      $('h2, h3, h4').filter((i, el) => /\?/.test($(el).text())).length >= 3, // FAQ-style
+      this.analyzeFAQ($).hasFAQSection,
+      /\b(download|last ned|pdf|template|mal|worksheet|checklist)\b/i.test(textContent)
+    ].filter(Boolean).length >= 2;
+
+    if (hasResourceIndicators) {
+      return 'resource';
     }
-    
-    // Homepage indicators (fallback)
+
+    // 6. Homepage indicators (fallback before default)
     const hasHomepageIndicators = [
       /\b(velkommen|welcome|hjem|home|hovedside)\b/i.test(textContent),
       $('nav, [role="navigation"]').length > 0,
       $('.hero, [class*="hero"], [class*="banner"]').length > 0,
-      $('header').length > 0 && $('footer').length > 0
-    ].filter(Boolean).length >= 2;
-    
+      $('header').length > 0 && $('footer').length > 0,
+      $('section').length >= 3 // Multiple sections indicate landing page
+    ].filter(Boolean).length >= 3;
+
     if (hasHomepageIndicators) {
       return 'homepage';
     }
-    
-    // Default fallback
-    return 'page';
+
+    // Default fallback: classify as resource (most generic type)
+    return 'resource';
   }
 
   // Helper methods

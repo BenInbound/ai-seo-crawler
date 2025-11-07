@@ -163,8 +163,8 @@ async function getOrganizationsForUser(userId) {
 
   return data.map(membership => ({
     ...membership.organization,
-    user_role: membership.role,
-    user_joined_at: membership.joined_at
+    role: membership.role,
+    joined_at: membership.joined_at
   }));
 }
 

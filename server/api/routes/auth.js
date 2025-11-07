@@ -89,14 +89,27 @@ router.post('/register', async (req, res) => {
       console.error('Failed to create default organization:', orgError);
     }
 
-    // Return sanitized user (without password_hash)
+    // Generate JWT token for automatic login
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
+    // Return sanitized user with token (automatic login after registration)
     const sanitized = sanitizeUser(user);
 
     res.status(201).json({
-      id: sanitized.id,
-      email: sanitized.email,
-      name: sanitized.name,
-      createdAt: sanitized.created_at
+      token,
+      expiresIn: JWT_EXPIRES_IN_SECONDS,
+      user: {
+        id: sanitized.id,
+        email: sanitized.email,
+        name: sanitized.name
+      }
     });
   } catch (error) {
     console.error('Registration error:', error);
