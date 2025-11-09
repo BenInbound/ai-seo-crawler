@@ -40,6 +40,12 @@ function Register() {
     e.preventDefault();
     setError(null);
 
+    // Check email domain restriction
+    if (!formData.email.toLowerCase().endsWith('@inbound.no')) {
+      setError('Only @inbound.no email addresses are allowed');
+      return;
+    }
+
     // Check password confirmation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -179,11 +185,14 @@ function Register() {
                 autoComplete="email"
                 required
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                placeholder="Email address (@inbound.no)"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Only @inbound.no email addresses are allowed
+              </p>
             </div>
             <div>
               <label htmlFor="password" className="sr-only">

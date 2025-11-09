@@ -44,6 +44,15 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Email domain restriction for internal use
+    const allowedDomain = '@inbound.no';
+    if (!email.toLowerCase().endsWith(allowedDomain)) {
+      return res.status(403).json({
+        error: 'Invalid email domain',
+        details: `Registration is currently restricted to ${allowedDomain} email addresses`
+      });
+    }
+
     if (password.length < 8) {
       return res.status(400).json({
         error: 'Password too short',
