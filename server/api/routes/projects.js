@@ -16,12 +16,14 @@ const {
   createProject,
   findProjectById,
   getOrganizationProjects,
+  getAllProjects,
   updateProject,
   deleteProject,
   getProjectWithStats,
   hasProjectAccess
 } = require('../../models/project');
 const { getMembership, getUserRole } = require('../../models/organization-member');
+const { supabaseAdmin } = require('../../services/database/supabase');
 
 const router = express.Router();
 
@@ -142,6 +144,39 @@ async function requireEditor(req, res, next) {
     });
   }
 }
+
+/**
+ * GET /projects
+ * List all projects across all organizations (shared view)
+ * All authenticated users can see all projects
+ */
+router.get('/projects', requireAuth, async (req, res) => {
+  try {
+    const { page = 1, limit = 100, orderBy = 'created_at', order = 'desc' } = req.query;
+
+    const projects = await getAllProjects({
+      limit: parseInt(limit, 10),
+      offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+      orderBy,
+      ascending: order === 'asc'
+    });
+
+    res.status(200).json({
+      data: projects,
+      pagination: {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        total: projects.length
+      }
+    });
+  } catch (error) {
+    console.error('Get all projects error:', error);
+    res.status(500).json({
+      error: 'Failed to get projects',
+      details: error.message
+    });
+  }
+});
 
 /**
  * GET /organizations/:orgId/projects
@@ -278,25 +313,49 @@ router.patch(
  * DELETE /projects/:projectId
  * Delete project (admin only)
  */
-router.delete('/projects/:projectId', requireAuth, requireProjectAccess, async (req, res) => {
+router.delete('/projects/:projectId', requireAuth, async (req, res) => {
   try {
-    const project = await findProjectById(req.projectId);
+    const { projectId } = req.params;
+    const project = await findProjectById(projectId);
+
     if (!project) {
       return res.status(404).json({
         error: 'Project not found'
       });
     }
 
-    // Check if user is admin
+    // Check if user has permission to delete
+    // Allow if: platform admin OR organization admin
+
+    // Get user to check platform admin status
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('is_admin')
+      .eq('id', req.userId)
+      .single();
+
+    const isPlatformAdmin = user?.is_admin === true;
+
+    // Check organization admin role
     const role = await getUserRole(req.userId, project.organization_id);
-    if (role !== 'admin') {
+    const isOrgAdmin = role === 'admin';
+
+    if (!isPlatformAdmin && !isOrgAdmin) {
       return res.status(403).json({
         error: 'Forbidden',
-        details: 'This action requires admin role'
+        details: 'Only platform admins or organization admins can delete projects'
       });
     }
 
-    await deleteProject(req.projectId);
+    // Delete the project using admin client to bypass RLS
+    const { error: deleteError } = await supabaseAdmin
+      .from('projects')
+      .delete()
+      .eq('id', projectId);
+
+    if (deleteError) {
+      throw new Error(`Failed to delete project: ${deleteError.message}`);
+    }
 
     res.status(204).send();
   } catch (error) {

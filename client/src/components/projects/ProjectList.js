@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Trash2 } from 'lucide-react';
 import { useOrg } from '../../contexts/OrgContext';
 import { projects as projectsAPI } from '../../services/api';
 
@@ -20,10 +21,9 @@ function ProjectList({ onCreateClick }) {
   const [error, setError] = useState(null);
 
   const loadProjects = useCallback(async () => {
-    if (!currentOrg) return;
     try {
       setLoading(true);
-      const response = await projectsAPI.list(currentOrg.id);
+      const response = await projectsAPI.listAll();
       setProjects(response.data || []);
       setError(null);
     } catch (err) {
@@ -32,7 +32,7 @@ function ProjectList({ onCreateClick }) {
     } finally {
       setLoading(false);
     }
-  }, [currentOrg]);
+  }, []);
 
   useEffect(() => {
     loadProjects();
@@ -40,6 +40,25 @@ function ProjectList({ onCreateClick }) {
 
   const handleProjectClick = project => {
     navigate(`/projects/${project.id}`);
+  };
+
+  const handleDeleteProject = async (e, project) => {
+    e.stopPropagation(); // Prevent navigation when clicking delete
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${project.name}"?\n\nThis will permanently delete the project and all associated data including crawls, pages, and scores. This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await projectsAPI.delete(project.id);
+      // Reload projects after successful deletion
+      await loadProjects();
+    } catch (err) {
+      console.error('Delete project error:', err);
+      alert(err.error || err.details || 'Failed to delete project');
+    }
   };
 
   const formatDate = dateString => {
@@ -51,14 +70,6 @@ function ProjectList({ onCreateClick }) {
       day: 'numeric'
     });
   };
-
-  if (!currentOrg) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">No organization selected</p>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -167,21 +178,37 @@ function ProjectList({ onCreateClick }) {
                 <div className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-medium text-blue-600 truncate">{project.name}</h3>
+                      <div className="flex items-center space-x-2">
+                        <h3 className="text-lg font-medium text-blue-600 truncate">{project.name}</h3>
+                        {project.organization_name && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            {project.organization_name}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-sm text-gray-500 truncate">{project.target_url}</p>
                       {project.description && (
                         <p className="mt-1 text-sm text-gray-600">{project.description}</p>
                       )}
                     </div>
-                    <div className="ml-4 flex-shrink-0 text-right">
-                      <p className="text-sm text-gray-500">
-                        Created {formatDate(project.created_at)}
-                      </p>
-                      {project.crawl_count !== undefined && (
-                        <p className="mt-1 text-sm text-gray-500">
-                          {project.crawl_count} {project.crawl_count === 1 ? 'crawl' : 'crawls'}
+                    <div className="ml-4 flex-shrink-0 flex items-start space-x-4">
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">
+                          Created {formatDate(project.created_at)}
                         </p>
-                      )}
+                        {project.crawl_count !== undefined && (
+                          <p className="mt-1 text-sm text-gray-500">
+                            {project.crawl_count} {project.crawl_count === 1 ? 'crawl' : 'crawls'}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteProject(e, project)}
+                        className="p-2 bg-red-50 hover:bg-red-100 rounded-md transition-colors group"
+                        title="Delete project"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600 group-hover:text-red-700" />
+                      </button>
                     </div>
                   </div>
                 </div>
