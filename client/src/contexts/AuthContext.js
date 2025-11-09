@@ -35,7 +35,8 @@ export function AuthProvider({ children }) {
 
           // Fetch fresh user data with organizations from server
           try {
-            const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+            const API_URL = process.env.REACT_APP_API_URL ||
+              (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3001');
             const response = await fetch(`${API_URL}/api/auth/me`, {
               headers: {
                 'Authorization': `Bearer ${storedToken}`

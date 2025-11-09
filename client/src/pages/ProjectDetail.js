@@ -36,7 +36,7 @@ function ProjectDetail() {
 
   // Fetch project details
   const loadProject = useCallback(async () => {
-    if (!projectId || !currentOrg) return;
+    if (!projectId) return;
 
     try {
       setLoading(true);
@@ -50,7 +50,7 @@ function ProjectDetail() {
     } finally {
       setLoading(false);
     }
-  }, [projectId, currentOrg]);
+  }, [projectId]);
 
   // Fetch project pages
   const loadPages = useCallback(async () => {

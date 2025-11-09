@@ -63,19 +63,16 @@ class AuthService {
       if (this.authContext && response.token && response.user) {
         this.authContext.login(response.token, response.user);
 
-        // Fetch full user data including organizations using the token directly
+        // Fetch full user data including organizations
+        // We need to use the token directly since React state updates are async
         try {
-          const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-          const userResponse = await fetch(`${API_URL}/api/auth/me`, {
+          const apiClient = (await import('./api')).default;
+          const userData = await apiClient.get('/auth/me', {
             headers: {
               'Authorization': `Bearer ${response.token}`
             }
           });
-
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            this.authContext.updateUser(userData);
-          }
+          this.authContext.updateUser(userData);
         } catch (fetchErr) {
           console.error('Failed to fetch user organizations:', fetchErr);
           // Continue even if this fails

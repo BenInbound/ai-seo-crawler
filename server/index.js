@@ -80,7 +80,7 @@ app.use(helmet());
 
 // CORS configuration - restrict to frontend domain only
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').trim(),
   credentials: true,
   optionsSuccessStatus: 200
 };
