@@ -25,6 +25,7 @@ const {
   isSameDomain
 } = require('../../../crawler/canonicalizer');
 const { extractContent, calculateMetrics } = require('../../../crawler/extractor');
+const { ContentAnalyzer } = require('../../../crawler/analyzer');
 const { RobotsChecker } = require('../../../utils/robotsChecker');
 const { addScoringJob } = require('../queue');
 
@@ -277,6 +278,21 @@ async function processCrawlJob(job) {
         // Extract structured content
         const extraction = extractContent(pageData.html, url);
 
+        // Detect page type (supports English and Norwegian)
+        const cheerio = require('cheerio');
+        const $ = cheerio.load(pageData.html);
+        const analyzer = new ContentAnalyzer();
+        const pageType = analyzer.detectPageType($, {
+          url,
+          title: extraction.title,
+          textContent: extraction.body
+        });
+
+        // Add page type to extraction
+        extraction.page_type = pageType;
+
+        console.log(`Detected page type for ${url}: ${pageType}`);
+
         // Calculate metrics
         const metrics = calculateMetrics(
           pageData.html,
@@ -292,7 +308,7 @@ async function processCrawlJob(job) {
         const page = await PageModel.upsert({
           project_id: projectId,
           url: canonicalUrl,
-          page_type: null, // Will be set by page-type detection in scoring phase
+          page_type: pageType,
           last_crawl_run_id: crawlRunId
         });
 
