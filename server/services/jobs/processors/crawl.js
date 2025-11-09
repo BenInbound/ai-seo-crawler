@@ -26,6 +26,7 @@ const {
 } = require('../../../crawler/canonicalizer');
 const { extractContent, calculateMetrics } = require('../../../crawler/extractor');
 const { RobotsChecker } = require('../../../utils/robotsChecker');
+const { addScoringJob } = require('../queue');
 
 // Models
 const CrawlRunModel = require('../../../models/crawl-run');
@@ -173,6 +174,7 @@ async function processCrawlJob(job) {
   let pagesDiscovered = 0;
   let pagesProcessed = 0;
   let tokenUsage = 0;
+  const snapshotIds = []; // Track snapshots for scoring
 
   // Phase 1: URL Discovery
   console.log('Phase 1: Discovering URLs...');
@@ -318,6 +320,9 @@ async function processCrawlJob(job) {
 
           // Update page with current snapshot
           await PageModel.update(page.id, { current_snapshot_id: snapshot.id });
+
+          // Track snapshot for scoring
+          snapshotIds.push(snapshot.id);
         } else {
           console.log(`Content unchanged for ${url}, skipping snapshot`);
         }
@@ -390,8 +395,27 @@ async function processCrawlJob(job) {
     pagesDiscovered,
     pagesProcessed,
     tokenUsage,
-    duration: `${(duration / 1000).toFixed(1)}s`
+    duration: `${(duration / 1000).toFixed(1)}s`,
+    snapshotsCreated: snapshotIds.length
   });
+
+  // Trigger scoring job for all snapshots created during crawl
+  if (snapshotIds.length > 0) {
+    try {
+      console.log(`Queueing scoring job for ${snapshotIds.length} snapshots...`);
+      await addScoringJob({
+        crawlRunId,
+        snapshotIds,
+        tokenLimit: token_limit
+      });
+      console.log(`Scoring job queued successfully for crawl ${crawlRunId}`);
+    } catch (error) {
+      console.error(`Failed to queue scoring job for crawl ${crawlRunId}:`, error.message);
+      // Don't fail the crawl job if scoring queue fails
+    }
+  } else {
+    console.log('No new snapshots created, skipping scoring');
+  }
 
   return {
     crawlRunId,
@@ -400,7 +424,8 @@ async function processCrawlJob(job) {
     pagesProcessed,
     tokenUsage,
     duration,
-    status: finalStatus.status
+    status: finalStatus.status,
+    snapshotsCreated: snapshotIds.length
   };
 }
 

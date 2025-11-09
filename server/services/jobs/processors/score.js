@@ -10,11 +10,19 @@
  * - User Story 3: Intelligent page scoring
  */
 
+const { Worker } = require('bullmq');
+const { QUEUE_NAMES, redisConnection } = require('../queue');
 const { scorePage, rescorePage } = require('../../../crawler/ai-scorer');
 const PageScoreModel = require('../../../models/score');
 const PageModel = require('../../../models/page');
 const SnapshotModel = require('../../../models/snapshot');
 const CrawlRunModel = require('../../../models/crawl-run');
+
+/**
+ * BullMQ Worker instance for scoring jobs
+ * Processes scoring jobs from the scoring queue
+ */
+let scoringWorker;
 
 /**
  * Process a scoring job
@@ -316,7 +324,66 @@ async function processJob(job) {
   }
 }
 
+/**
+ * Initialize the scoring worker
+ *
+ * @param {Object} supabase - Supabase client
+ * @returns {Worker} - Scoring worker instance
+ */
+function initializeScoringWorker(supabase) {
+  // Initialize models with Supabase client
+  PageScoreModel.setSupabaseClient(supabase);
+  PageModel.setSupabaseClient(supabase);
+  SnapshotModel.setSupabaseClient(supabase);
+  CrawlRunModel.setSupabaseClient(supabase);
+
+  // Create worker
+  scoringWorker = new Worker(
+    QUEUE_NAMES.SCORING,
+    async job => {
+      console.log(`Processing scoring job ${job.id}:`, job.data);
+      return await processJob(job);
+    },
+    {
+      connection: redisConnection,
+      concurrency: 3, // Process up to 3 scoring jobs in parallel
+      limiter: {
+        max: 10, // Max 10 jobs
+        duration: 1000 // Per second
+      }
+    }
+  );
+
+  // Worker event handlers
+  scoringWorker.on('completed', job => {
+    console.log(`Scoring job ${job.id} completed`);
+  });
+
+  scoringWorker.on('failed', (job, err) => {
+    console.error(`Scoring job ${job?.id} failed:`, err.message);
+  });
+
+  scoringWorker.on('error', err => {
+    console.error('Scoring worker error:', err);
+  });
+
+  return scoringWorker;
+}
+
+/**
+ * Close the scoring worker
+ *
+ * @returns {Promise<void>}
+ */
+async function closeScoringWorker() {
+  if (scoringWorker) {
+    await scoringWorker.close();
+  }
+}
+
 module.exports = {
+  initializeScoringWorker,
+  closeScoringWorker,
   processJob,
   processScoreJob,
   processRescoreJob,

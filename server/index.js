@@ -48,6 +48,11 @@ const rateLimiter = new RateLimiterMemory({
 });
 
 const rateLimiterMiddleware = (req, res, next) => {
+  // Skip rate limiting for authentication endpoints
+  if (req.path.startsWith('/api/auth/')) {
+    return next();
+  }
+
   rateLimiter.consume(req.ip)
     .then(() => {
       next();

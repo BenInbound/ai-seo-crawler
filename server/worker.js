@@ -16,6 +16,7 @@ const { supabaseAdmin } = require('./services/database/supabase');
 
 // Import worker initializers
 const { initializeCrawlWorker, closeCrawlWorker } = require('./services/jobs/processors/crawl');
+const { initializeScoringWorker, closeScoringWorker } = require('./services/jobs/processors/score');
 
 // Initialize all models with Supabase client
 const UserModel = require('./models/user');
@@ -43,6 +44,7 @@ console.log('='.repeat(60));
 
 // Initialize workers
 let crawlWorker;
+let scoringWorker;
 
 async function startWorkers() {
   try {
@@ -53,8 +55,12 @@ async function startWorkers() {
     crawlWorker = initializeCrawlWorker(supabaseAdmin);
     console.log('✅ Crawl worker started (concurrency: 2)');
 
+    // Start scoring worker
+    console.log('🎯 Starting scoring worker...');
+    scoringWorker = initializeScoringWorker(supabaseAdmin);
+    console.log('✅ Scoring worker started (concurrency: 3)');
+
     // TODO: Add more workers as they are implemented
-    // - Scoring worker (User Story 3)
     // - AI worker (User Story 4)
 
     console.log('\n✨ All workers started successfully!');
@@ -74,6 +80,11 @@ async function shutdown() {
     if (crawlWorker) {
       await closeCrawlWorker();
       console.log('✅ Crawl worker closed');
+    }
+
+    if (scoringWorker) {
+      await closeScoringWorker();
+      console.log('✅ Scoring worker closed');
     }
 
     console.log('👋 Workers shutdown complete');

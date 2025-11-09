@@ -32,6 +32,7 @@ function ProjectDetail() {
   const [error, setError] = useState(null);
   const [showCrawlForm, setShowCrawlForm] = useState(false);
   const [activeTab, setActiveTab] = useState('pages'); // 'pages' or 'crawls'
+  const [selectedCrawl, setSelectedCrawl] = useState(null);
 
   // Fetch project details
   const loadProject = useCallback(async () => {
@@ -93,6 +94,14 @@ function ProjectDetail() {
 
   const handlePageClick = (page) => {
     navigate(`/pages/${page.id}`);
+  };
+
+  const handleViewCrawl = (crawl) => {
+    setSelectedCrawl(crawl);
+  };
+
+  const handleCloseCrawlDetail = () => {
+    setSelectedCrawl(null);
   };
 
   const formatDate = (dateString) => {
@@ -275,7 +284,109 @@ function ProjectDetail() {
               </div>
             ) : (
               <div>
-                <CrawlHistory projectId={projectId} />
+                {selectedCrawl ? (
+                  <div className="space-y-4">
+                    {/* Crawl Detail View */}
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        onClick={handleCloseCrawlDetail}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        ← Back to Crawl History
+                      </button>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Crawl Details
+                      </h3>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Status
+                          </label>
+                          <p className="text-sm text-gray-900 capitalize">{selectedCrawl.status}</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Run Type
+                          </label>
+                          <p className="text-sm text-gray-900 capitalize">{selectedCrawl.runType?.replace('_', ' ')}</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Pages Discovered
+                          </label>
+                          <p className="text-sm text-gray-900">{selectedCrawl.pagesDiscovered?.toLocaleString()}</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Pages Processed
+                          </label>
+                          <p className="text-sm text-gray-900">{selectedCrawl.pagesProcessed?.toLocaleString()}</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Token Usage
+                          </label>
+                          <p className="text-sm text-gray-900">{selectedCrawl.tokenUsage?.toLocaleString()}</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Started At
+                          </label>
+                          <p className="text-sm text-gray-900">{formatDate(selectedCrawl.startedAt)}</p>
+                        </div>
+
+                        {selectedCrawl.completedAt && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Completed At
+                            </label>
+                            <p className="text-sm text-gray-900">{formatDate(selectedCrawl.completedAt)}</p>
+                          </div>
+                        )}
+
+                        {selectedCrawl.errorMessage && (
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-red-700 mb-1">
+                              Error Message
+                            </label>
+                            <p className="text-sm text-red-600">{selectedCrawl.errorMessage}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Progress bar */}
+                      {(selectedCrawl.status === 'running' || selectedCrawl.status === 'paused') && (
+                        <div className="mt-6">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Progress
+                          </label>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{
+                                width: `${Math.round((selectedCrawl.pagesProcessed / selectedCrawl.pagesDiscovered) * 100)}%`
+                              }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {Math.round((selectedCrawl.pagesProcessed / selectedCrawl.pagesDiscovered) * 100)}% complete
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <CrawlHistory projectId={projectId} onViewCrawl={handleViewCrawl} />
+                )}
               </div>
             )}
           </div>
