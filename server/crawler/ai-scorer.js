@@ -152,7 +152,38 @@ Provide your analysis as JSON with this structure:
     {
       "category": "direct_answer",
       "text": "Human-sounding recommendation that references specific page content",
-      "references": ["Specific element from page", "Another specific element"]
+      "references": ["Specific element from page"],
+      "example": {
+        "type": "faq",
+        "content": [
+          {"q": "What is X?", "a": "X is..."},
+          {"q": "How does Y work?", "a": "Y works by..."}
+        ]
+      }
+    },
+    {
+      "category": "structured_content",
+      "text": "Recommendation text",
+      "references": [],
+      "example": {
+        "type": "tldr",
+        "content": "Brief 2-3 sentence summary of the page"
+      }
+    },
+    {
+      "category": "authority",
+      "text": "Recommendation text",
+      "references": [],
+      "example": {
+        "type": "table",
+        "content": {
+          "headers": ["Feature", "Description", "Benefit"],
+          "rows": [
+            ["Feature 1", "Description", "Key benefit"],
+            ["Feature 2", "Description", "Key benefit"]
+          ]
+        }
+      }
     }
   ]
 }
@@ -166,7 +197,21 @@ Scoring Guidelines:
 - Emphasize page-type-appropriate criteria
 - Recommendations must be concise (2-4 sentences), human-sounding, and reference actual page content
 - Avoid formulaic patterns like "Consider adding..." or "It would be beneficial to..."
-- Be specific and actionable`;
+- Be specific and actionable
+
+Content Examples:
+- Include an "example" object with each recommendation containing ready-to-use content
+- Example types:
+  * "faq": Array of 3-5 relevant Q&A pairs based on page topic
+  * "tldr": 2-3 sentence summary capturing key points
+  * "executive_summary": Professional 1-paragraph overview (3-4 sentences)
+  * "table": Structured comparison or data table in markdown format
+  * "text": Improved text snippet showing before/after
+- Examples should be specific to the actual page content and topic
+- Make examples production-ready and copy-paste friendly
+- For FAQs: Write natural questions users would ask + clear, direct answers
+- For tables: Include relevant columns and 3-5 rows of data
+- For summaries: Extract and synthesize actual page information`;
 }
 
 /**

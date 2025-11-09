@@ -256,6 +256,93 @@ function PageDetail({ page, onRescore, loading = false, isAnalyzing = false }) {
                         </ul>
                       </div>
                     )}
+
+                    {/* Content Examples */}
+                    {rec.example && rec.example.content && (
+                      <div className="mt-4 border-t border-gray-200 pt-4">
+                        <p className="text-xs font-semibold text-gray-600 uppercase mb-2">
+                          {rec.example.type === 'faq' && 'Example FAQ Questions & Answers'}
+                          {rec.example.type === 'tldr' && 'Example TL;DR Summary'}
+                          {rec.example.type === 'executive_summary' && 'Example Executive Summary'}
+                          {rec.example.type === 'table' && 'Example Table'}
+                          {rec.example.type === 'text' && 'Example Text'}
+                        </p>
+
+                        {/* FAQ Example */}
+                        {rec.example.type === 'faq' && Array.isArray(rec.example.content) && (
+                          <div className="bg-blue-50 rounded-lg p-4 space-y-3">
+                            {rec.example.content.map((qa, qaIndex) => (
+                              <div key={qaIndex} className="border-l-2 border-blue-400 pl-3">
+                                <p className="font-semibold text-gray-900 text-sm mb-1">
+                                  Q: {qa.q}
+                                </p>
+                                <p className="text-gray-700 text-sm">
+                                  A: {qa.a}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* TLDR Example */}
+                        {rec.example.type === 'tldr' && typeof rec.example.content === 'string' && (
+                          <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-lg p-4">
+                            <p className="text-gray-800 text-sm font-medium">
+                              {rec.example.content}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Executive Summary Example */}
+                        {rec.example.type === 'executive_summary' && typeof rec.example.content === 'string' && (
+                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <p className="text-gray-800 text-sm leading-relaxed">
+                              {rec.example.content}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Table Example */}
+                        {rec.example.type === 'table' && rec.example.content && rec.example.content.headers && (
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  {rec.example.content.headers.map((header, hIndex) => (
+                                    <th
+                                      key={hIndex}
+                                      className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider"
+                                    >
+                                      {header}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {rec.example.content.rows && rec.example.content.rows.map((row, rIndex) => (
+                                  <tr key={rIndex}>
+                                    {row.map((cell, cIndex) => (
+                                      <td key={cIndex} className="px-4 py-2 text-sm text-gray-700">
+                                        {cell}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+
+                        {/* Text Example */}
+                        {rec.example.type === 'text' && typeof rec.example.content === 'string' && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <p className="text-gray-800 text-sm whitespace-pre-wrap">
+                              {rec.example.content}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
