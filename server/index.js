@@ -77,7 +77,15 @@ const rateLimiterMiddleware = (req, res, next) => {
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+
+// CORS configuration - restrict to frontend domain only
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 

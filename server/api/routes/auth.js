@@ -25,7 +25,11 @@ const { generateAccessToken } = require('../../services/auth/session');
 const router = express.Router();
 
 // JWT configuration
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+// SECURITY: No fallback - fail fast if JWT_SECRET not set
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('CRITICAL SECURITY ERROR: JWT_SECRET environment variable is REQUIRED but not set!');
+}
 const JWT_EXPIRES_IN = '7d'; // 7 days
 const JWT_EXPIRES_IN_SECONDS = 7 * 24 * 60 * 60;
 
