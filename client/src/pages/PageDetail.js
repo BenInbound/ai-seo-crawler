@@ -110,33 +110,43 @@ function PageDetailPage() {
         {/* Header */}
         <header className="bg-white shadow">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleBack}
-                className="inline-flex items-center text-gray-600 hover:text-gray-900"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <h1 className="text-2xl font-bold text-gray-900">Page Details</h1>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Page Details</h1>
+                {currentOrg && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Organization: <span className="font-medium">{currentOrg.name}</span>
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="hidden sm:block text-sm text-gray-700">
+                  <span className="font-medium">{user?.name || user?.email}</span>
+                </div>
+              </div>
             </div>
           </div>
         </header>
 
+        {/* Back Button */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            <span>Back</span>
+          </button>
+        </div>
+
         {/* Error State */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-8">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="flex items-start space-x-3">
               <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="text-lg font-semibold text-red-900 mb-2">Error Loading Page</h3>
                 <p className="text-red-700">{error}</p>
-                <button
-                  onClick={handleBack}
-                  className="mt-4 inline-flex items-center px-4 py-2 border border-red-300 rounded-lg text-red-700 hover:bg-red-100 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Go Back
-                </button>
               </div>
             </div>
           </div>
@@ -151,22 +161,13 @@ function PageDetailPage() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleBack}
-                className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                <span className="hidden sm:inline">Back</span>
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Page Analysis</h1>
-                {currentOrg && (
-                  <p className="text-sm text-gray-600 mt-1">
-                    Organization: <span className="font-medium">{currentOrg.name}</span>
-                  </p>
-                )}
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Page Analysis</h1>
+              {currentOrg && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Organization: <span className="font-medium">{currentOrg.name}</span>
+                </p>
+              )}
             </div>
             <div className="flex items-center space-x-4">
               <div className="hidden sm:block text-sm text-gray-700">
@@ -177,8 +178,19 @@ function PageDetailPage() {
         </div>
       </header>
 
+      {/* Back Button */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <button
+          onClick={handleBack}
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          <span>Back</span>
+        </button>
+      </div>
+
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-8">
         <PageDetailComponent page={page} onRescore={handleRescore} loading={false} />
       </main>
 

@@ -169,18 +169,9 @@ function ProjectDetail() {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleBack}
-                className="inline-flex items-center text-gray-600 hover:text-gray-900"
-              >
-                <ArrowLeft className="h-5 w-5 mr-1" />
-                <span className="hidden sm:inline">Back</span>
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-                <p className="text-sm text-gray-500 mt-1">{project.target_url}</p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
+              <p className="text-sm text-gray-500 mt-1">{project.target_url}</p>
             </div>
             {canEdit() && !showCrawlForm && (
               <button
@@ -195,8 +186,19 @@ function ProjectDetail() {
         </div>
       </header>
 
+      {/* Back Button */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <button
+          onClick={handleBack}
+          className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5 mr-2" />
+          <span>Back</span>
+        </button>
+      </div>
+
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-8">
         {/* Project Info Card */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
