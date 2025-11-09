@@ -201,17 +201,24 @@ Scoring Guidelines:
 
 Content Examples:
 - Include an "example" object with each recommendation containing ready-to-use content
-- Example types:
-  * "faq": Array of 3-5 relevant Q&A pairs based on page topic
+- Match example type to recommendation category:
+  * "direct_answer" → use "text" type (show improved direct answer paragraph)
+  * "question_coverage" → use "faq" type (3-5 Q&A pairs users would ask)
+  * "structured_content" → use "tldr" or "executive_summary" type
+  * "content_depth" → use "executive_summary" or detailed "text" type
+  * "authority" → use "table" type (comparison, data, stats) or "text" with citations
+  * "multimedia_richness" → DO NOT include example (multimedia can't be shown as text)
+  * "technical_optimization" → DO NOT include example (technical fixes aren't content)
+  * "internal_linking" → DO NOT include example (links are structural, not content)
+- Example types available:
+  * "faq": Array of 3-5 Q&A pairs - [{q: "question", a: "answer"}]
   * "tldr": 2-3 sentence summary capturing key points
   * "executive_summary": Professional 1-paragraph overview (3-4 sentences)
-  * "table": Structured comparison or data table in markdown format
-  * "text": Improved text snippet showing before/after
+  * "table": {headers: [...], rows: [[...], [...]]} - 3-5 data rows
+  * "text": Improved content snippet showing the enhancement
 - Examples should be specific to the actual page content and topic
 - Make examples production-ready and copy-paste friendly
-- For FAQs: Write natural questions users would ask + clear, direct answers
-- For tables: Include relevant columns and 3-5 rows of data
-- For summaries: Extract and synthesize actual page information`;
+- Only include examples for categories where text examples make sense`;
 }
 
 /**
