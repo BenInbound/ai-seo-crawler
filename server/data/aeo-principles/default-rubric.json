@@ -241,33 +241,39 @@
   "pageTypeRubrics": {
     "homepage": {
       "description": "Homepage scoring emphasizes brand trust, navigation, and overview content",
-      "emphasizedCriteria": ["eeat_signals", "internal_linking", "schema_markup", "entity_clarity"],
-      "deemphasizedCriteria": ["direct_answer", "question_coverage", "snippet_optimization"]
+      "emphasizedCriteria": ["internal_linking", "schema_markup", "entity_clarity"],
+      "deemphasizedCriteria": ["direct_answer", "question_coverage", "snippet_optimization"],
+      "excludedCriteria": ["eeat_signals", "content_freshness"]
     },
     "blog": {
       "description": "Blog post scoring emphasizes content quality, E-A-T, and comprehensive answers optimized for AI search",
       "emphasizedCriteria": ["direct_answer", "question_coverage", "eeat_signals", "outbound_links", "content_freshness", "conversational_tone", "snippet_optimization", "original_research"],
-      "deemphasizedCriteria": []
+      "deemphasizedCriteria": [],
+      "excludedCriteria": []
     },
     "product": {
       "description": "Product page scoring emphasizes clear value proposition, specifications, and conversion elements",
       "emphasizedCriteria": ["direct_answer", "schema_markup", "performance", "snippet_optimization", "multimedia_richness", "entity_clarity"],
-      "deemphasizedCriteria": ["question_coverage"]
+      "deemphasizedCriteria": ["question_coverage"],
+      "excludedCriteria": ["eeat_signals", "content_freshness"]
     },
     "solution": {
       "description": "Solution page scoring emphasizes problem-solution fit and comprehensive explanation",
       "emphasizedCriteria": ["direct_answer", "question_coverage", "internal_linking", "conversational_tone", "snippet_optimization", "multimedia_richness", "entity_clarity"],
-      "deemphasizedCriteria": []
+      "deemphasizedCriteria": [],
+      "excludedCriteria": ["eeat_signals", "content_freshness"]
     },
     "resource": {
       "description": "Resource page scoring emphasizes depth, citations, comprehensive coverage, and unique insights",
       "emphasizedCriteria": ["question_coverage", "eeat_signals", "outbound_links", "schema_markup", "content_freshness", "snippet_optimization", "multimedia_richness", "original_research"],
-      "deemphasizedCriteria": []
+      "deemphasizedCriteria": [],
+      "excludedCriteria": []
     },
     "conversion": {
       "description": "Conversion page scoring emphasizes clarity, trust signals, and technical performance",
-      "emphasizedCriteria": ["direct_answer", "eeat_signals", "performance", "accessibility", "conversational_tone", "snippet_optimization"],
-      "deemphasizedCriteria": ["question_coverage"]
+      "emphasizedCriteria": ["direct_answer", "performance", "accessibility", "conversational_tone", "snippet_optimization"],
+      "deemphasizedCriteria": ["question_coverage"],
+      "excludedCriteria": ["eeat_signals", "content_freshness"]
     }
   },
   "notes": [

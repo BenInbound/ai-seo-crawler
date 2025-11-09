@@ -108,12 +108,18 @@ async function getCriteriaForPageType(pageType, rubric = null) {
   // Get page type specific rubric info
   const pageTypeRubric = rubric.pageTypeRubrics?.[pageType] || {};
   const emphasizedSet = new Set(pageTypeRubric.emphasizedCriteria || []);
+  const excludedSet = new Set(pageTypeRubric.excludedCriteria || []);
 
   // Build array of criteria with emphasis markers
   const criteriaArray = [];
 
   rubric.categories.forEach(category => {
     category.criteria.forEach(criterion => {
+      // Skip excluded criteria for this page type
+      if (excludedSet.has(criterion.name)) {
+        return;
+      }
+
       criteriaArray.push({
         name: criterion.name,
         category: category.name,
