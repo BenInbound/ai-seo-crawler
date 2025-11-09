@@ -72,7 +72,7 @@ router.post('/register', async (req, res) => {
     // Hash password
     const password_hash = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user (approved defaults to false, requiring admin approval)
     const user = await createUser({
       email,
       password_hash,
@@ -98,27 +98,11 @@ router.post('/register', async (req, res) => {
       console.error('Failed to create default organization:', orgError);
     }
 
-    // Generate JWT token for automatic login
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
-
-    // Return sanitized user with token (automatic login after registration)
-    const sanitized = sanitizeUser(user);
-
+    // Return success message (no automatic login - requires approval)
     res.status(201).json({
-      token,
-      expiresIn: JWT_EXPIRES_IN_SECONDS,
-      user: {
-        id: sanitized.id,
-        email: sanitized.email,
-        name: sanitized.name
-      }
+      message: 'Registration successful',
+      details: 'Your account has been created and is awaiting admin approval. You will be able to log in once approved.',
+      email: email
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -160,6 +144,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({
         error: 'Invalid credentials',
         details: 'Email or password is incorrect'
+      });
+    }
+
+    // Check if user is approved
+    if (!user.approved) {
+      return res.status(403).json({
+        error: 'Account pending approval',
+        details: 'Your account is awaiting admin approval. Please contact your administrator.'
       });
     }
 

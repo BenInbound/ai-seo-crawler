@@ -25,6 +25,7 @@ CrawlRunModel.setSupabaseClient(supabaseAdmin);
 PageModel.setSupabaseClient(supabaseAdmin);
 SnapshotModel.setSupabaseClient(supabaseAdmin);
 ScoreModel.setSupabaseClient(supabaseAdmin);
+adminRoutes.setSupabaseClient(supabaseAdmin);
 
 // Import middleware
 const { requestLogger, performanceLogger, errorLogger } = require('./middleware/logger');
@@ -33,6 +34,7 @@ const { optionalAuthenticate } = require('./middleware/auth');
 
 // Import routes
 const authRoutes = require('./api/routes/auth');
+const adminRoutes = require('./api/routes/admin');
 const organizationRoutes = require('./api/routes/organizations');
 const projectRoutes = require('./api/routes/projects');
 const crawlerRoutes = require('./api/routes/crawler');
@@ -91,6 +93,7 @@ app.use(optionalAuthenticate);
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes.router); // Admin routes for user management
 app.use('/api/organizations', organizationRoutes);
 app.use('/api', projectRoutes); // Projects uses full paths like /organizations/:orgId/projects
 app.use('/api', crawlerRoutes); // Crawler routes use full paths like /projects/:projectId/crawls

@@ -70,10 +70,10 @@ function Register() {
 
       if (result.success) {
         setSuccess(true);
-        // Redirect to login after 2 seconds
+        // Redirect to login after 5 seconds to give time to read approval message
         setTimeout(() => {
           navigate('/login');
-        }, 2000);
+        }, 5000);
       } else {
         setError(result.error || 'Registration failed');
       }
@@ -107,7 +107,13 @@ function Register() {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-green-800">Registration successful!</h3>
-                <p className="mt-2 text-sm text-green-700">Redirecting to login page...</p>
+                <p className="mt-2 text-sm text-green-700">
+                  Your account has been created and is awaiting admin approval.
+                </p>
+                <p className="mt-1 text-sm text-green-700">
+                  You will be able to log in once an administrator approves your account.
+                </p>
+                <p className="mt-2 text-sm text-green-700 font-medium">Redirecting to login page...</p>
               </div>
             </div>
           </div>

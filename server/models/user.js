@@ -10,6 +10,9 @@
  * - password_hash (TEXT, NOT NULL) - Bcrypt hashed password
  * - name (TEXT) - Display name
  * - preferences (JSONB, DEFAULT '{}') - User preferences
+ * - approved (BOOLEAN, DEFAULT false, NOT NULL) - Admin approval status
+ * - approved_at (TIMESTAMPTZ) - Timestamp when user was approved
+ * - approved_by (UUID) - Admin user who approved this account
  * - created_at (TIMESTAMPTZ, DEFAULT NOW())
  * - updated_at (TIMESTAMPTZ, DEFAULT NOW())
  * - last_login_at (TIMESTAMPTZ)

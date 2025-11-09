@@ -219,6 +219,34 @@ function getUserRoleInOrganization(req, organizationId) {
   return membership ? membership.role : null;
 }
 
+/**
+ * Check if user is admin in any organization
+ * For now, considers any user with an 'admin' role in any organization as admin
+ * @param {object} req - Express request object
+ * @returns {boolean} True if user is admin
+ */
+function isAdmin(req) {
+  const orgs = getUserOrganizations(req);
+  return orgs.some(org => org.role === 'admin');
+}
+
+/**
+ * Require admin role for a route
+ * Returns 403 if user is not an admin
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ * @param {function} next - Express next middleware function
+ */
+function requireAdmin(req, res, next) {
+  if (!isAdmin(req)) {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'Admin role required'
+    });
+  }
+  next();
+}
+
 module.exports = {
   authenticate,
   optionalAuthenticate,
@@ -226,5 +254,7 @@ module.exports = {
   requireAuth,
   getUserOrganizations,
   userBelongsToOrganization,
-  getUserRoleInOrganization
+  getUserRoleInOrganization,
+  isAdmin,
+  requireAdmin
 };
