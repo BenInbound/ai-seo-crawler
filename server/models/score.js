@@ -18,10 +18,11 @@
  * - ai_tokens_used (INTEGER) - Token count for this evaluation
  * - scored_at (TIMESTAMPTZ, DEFAULT NOW())
  *
- * Criteria scores fields:
+ * Criteria scores fields (v1.1):
  * - direct_answer, question_coverage, eeat_signals, outbound_links,
  *   schema_markup, internal_linking, readability, performance,
- *   indexing, accessibility
+ *   indexing, accessibility, content_freshness, conversational_tone,
+ *   snippet_optimization, original_research, multimedia_richness, entity_clarity
  *
  * AI recommendations structure:
  * - category (TEXT) - Which criterion this addresses
@@ -49,6 +50,7 @@ const VALID_PAGE_TYPES = ['homepage', 'product', 'solution', 'blog', 'resource',
 
 /**
  * Valid criteria names
+ * Updated with v1.1 criteria (2025-11-09) from "SEO for AI" PDF analysis
  */
 const VALID_CRITERIA = [
   'direct_answer',
@@ -60,7 +62,14 @@ const VALID_CRITERIA = [
   'readability',
   'performance',
   'indexing',
-  'accessibility'
+  'accessibility',
+  // New criteria added in rubric v1.1 (2025-11-09)
+  'content_freshness',
+  'conversational_tone',
+  'snippet_optimization',
+  'original_research',
+  'multimedia_richness',
+  'entity_clarity'
 ];
 
 /**

@@ -1,8 +1,8 @@
 {
   "documentType": "default-aeo-rubric",
-  "version": "1.0",
-  "description": "Default AEO scoring rubric. Replace with processed PDF principles for production use.",
-  "lastUpdated": "2025-11-07",
+  "version": "1.1",
+  "description": "AEO scoring rubric based on 'SEO for AI' (Inbound.no, Oct 2025) PDF analysis. Includes criteria for AI Overviews, conversational tone, freshness signals, and multimedia optimization.",
+  "lastUpdated": "2025-11-09",
   "categories": [
     {
       "name": "Content Quality & AI Optimization",
@@ -41,6 +41,48 @@
             "Add tables for comparisons or data",
             "Maintain 8th-grade reading level or below for broad topics"
           ]
+        },
+        {
+          "name": "content_freshness",
+          "description": "Page displays clear freshness signals including last updated dates, review timestamps, and recent content updates",
+          "scoringGuidance": "0-40: No date information or content appears outdated (>2 years). 41-60: Publication date shown but no update date, or content 1-2 years old. 61-80: Both publication and 'last updated' dates shown, content refreshed within 6-12 months. 81-100: Prominent 'last updated' timestamp within last 3 months, quarterly review cycle documented, edit history visible.",
+          "bestPractices": [
+            "Display 'Last Updated' date prominently near the top of the page",
+            "Include both publication date and last modified date in schema markup",
+            "Refresh content quarterly for high-priority topics",
+            "Add 'Updated for 2025' type notices for evergreen content",
+            "Document review cycles (e.g., 'Reviewed quarterly by our team')",
+            "Update statistics, examples, and screenshots regularly",
+            "Remove or update outdated information and references"
+          ]
+        },
+        {
+          "name": "conversational_tone",
+          "description": "Content uses natural, conversational language that mirrors how people speak and ask questions",
+          "scoringGuidance": "0-40: Overly formal, robotic, or academic tone with no conversational elements. 41-60: Mostly formal but includes some natural language. 61-80: Good balance with conversational elements, some contractions, and second-person voice. 81-100: Natural conversational flow throughout, appropriate use of contractions, second-person address, questions to reader, and speech-like patterns.",
+          "bestPractices": [
+            "Use second-person voice ('you' and 'your') to address readers directly",
+            "Include contractions naturally (you'll, we're, it's) where appropriate",
+            "Ask rhetorical questions to engage readers",
+            "Use active voice instead of passive voice",
+            "Write how you would explain the topic to a colleague",
+            "Avoid overly technical jargon unless necessary (and explain when used)",
+            "Include transition phrases that mirror natural speech"
+          ]
+        },
+        {
+          "name": "snippet_optimization",
+          "description": "Content is specifically formatted to be extracted as featured snippets with 40-60 word answers, comparison tables, or step-by-step lists",
+          "scoringGuidance": "0-40: No snippet-optimized formats present. 41-60: Some structured content but not snippet-ready (too long/short, poor formatting). 61-80: Contains 1-2 snippet-ready elements (concise answers, tables, or numbered lists). 81-100: Multiple snippet-optimized sections with 40-60 word answers, comparison tables, numbered steps, and bullet lists.",
+          "bestPractices": [
+            "Provide 40-60 word direct answers immediately after question headings",
+            "Create comparison tables for 'vs' queries (e.g., X vs Y features)",
+            "Use numbered lists for step-by-step instructions",
+            "Format definition answers as: '[Term] is [concise definition in 40-60 words]'",
+            "Place snippet-worthy content in the first 100-200 words when possible",
+            "Use HTML tables for data comparisons (Google favors tables)",
+            "Structure answers with <p> or <div> tags for clean extraction"
+          ]
         }
       ]
     },
@@ -70,6 +112,21 @@
             "Include links in context, not just a reference list",
             "Verify all external links are working and HTTPS",
             "Balance internal and external links appropriately"
+          ]
+        },
+        {
+          "name": "original_research",
+          "description": "Page features proprietary data, original studies, surveys, benchmarks, or unique findings that are highly citable",
+          "scoringGuidance": "0-40: No original research or data, entirely aggregated content. 41-60: Some unique insights but no formal research or data. 61-80: Contains original data, case studies, or survey results with proper methodology. 81-100: Comprehensive proprietary research with unique datasets, clear methodology, downloadable resources, and citable statistics.",
+          "bestPractices": [
+            "Conduct original surveys or studies relevant to your industry",
+            "Publish proprietary benchmarks and performance data",
+            "Create unique datasets and make them available (with proper citation request)",
+            "Include methodology sections explaining research approach",
+            "Add data visualizations (charts, graphs) of original findings",
+            "Provide downloadable research reports or whitepapers",
+            "Include specific, citable statistics (e.g., 'According to our 2025 survey of 1,000 marketers...')",
+            "Update research annually to maintain freshness"
           ]
         }
       ]
@@ -127,6 +184,21 @@
             "Use ARIA labels where appropriate",
             "Test with screen readers"
           ]
+        },
+        {
+          "name": "multimedia_richness",
+          "description": "Page includes rich multimedia content such as videos, diagrams, charts, infographics, and visual aids with proper schema markup",
+          "scoringGuidance": "0-40: Text-only content with no visual or multimedia elements. 41-60: Basic images but no videos, charts, or rich media. 61-80: Includes relevant videos OR charts/diagrams with decent presentation. 81-100: Multiple media types (videos with VideoObject schema, charts, diagrams, infographics) that enhance understanding.",
+          "bestPractices": [
+            "Embed short explainer videos (YouTube, Vimeo) with VideoObject schema markup",
+            "Include data visualizations (charts, graphs) for statistics and trends",
+            "Add process diagrams or flowcharts for complex concepts",
+            "Create custom infographics for key takeaways",
+            "Ensure all videos have transcripts for accessibility",
+            "Use ImageObject schema for key images",
+            "Optimize media file sizes for fast loading",
+            "Add descriptive captions to all visual elements"
+          ]
         }
       ]
     },
@@ -147,6 +219,21 @@
             "Validate with Google's Rich Results Test",
             "Consider Product, Review, or Event schema where applicable"
           ]
+        },
+        {
+          "name": "entity_clarity",
+          "description": "Page provides clear, structured definitions of key entities (people, organizations, products, concepts) with explicit relationships",
+          "scoringGuidance": "0-40: No clear entity definitions or structure. 41-60: Entities mentioned but not explicitly defined. 61-80: Key entities defined with basic context and relationships. 81-100: All major entities clearly defined with structured format, schema markup, and explicit relationships.",
+          "bestPractices": [
+            "Define key terms and entities explicitly (e.g., 'X is a [category] that [function]')",
+            "Use DefinedTerm schema for glossary items",
+            "Structure entity relationships clearly (e.g., 'Company X, founded by Person Y')",
+            "Include entity attributes (founded date, location, parent organization)",
+            "Create knowledge panel-worthy entity descriptions",
+            "Link entities to authoritative sources (Wikipedia, official sites)",
+            "Use consistent entity names throughout the page",
+            "Add Person or Organization schema for key entities"
+          ]
         }
       ]
     }
@@ -154,40 +241,41 @@
   "pageTypeRubrics": {
     "homepage": {
       "description": "Homepage scoring emphasizes brand trust, navigation, and overview content",
-      "emphasizedCriteria": ["eeat_signals", "internal_linking", "schema_markup"],
-      "deemphasizedCriteria": ["direct_answer", "question_coverage"]
+      "emphasizedCriteria": ["eeat_signals", "internal_linking", "schema_markup", "entity_clarity"],
+      "deemphasizedCriteria": ["direct_answer", "question_coverage", "snippet_optimization"]
     },
     "blog": {
-      "description": "Blog post scoring emphasizes content quality, E-A-T, and comprehensive answers",
-      "emphasizedCriteria": ["direct_answer", "question_coverage", "eeat_signals", "outbound_links"],
+      "description": "Blog post scoring emphasizes content quality, E-A-T, and comprehensive answers optimized for AI search",
+      "emphasizedCriteria": ["direct_answer", "question_coverage", "eeat_signals", "outbound_links", "content_freshness", "conversational_tone", "snippet_optimization", "original_research"],
       "deemphasizedCriteria": []
     },
     "product": {
       "description": "Product page scoring emphasizes clear value proposition, specifications, and conversion elements",
-      "emphasizedCriteria": ["direct_answer", "schema_markup", "performance"],
+      "emphasizedCriteria": ["direct_answer", "schema_markup", "performance", "snippet_optimization", "multimedia_richness", "entity_clarity"],
       "deemphasizedCriteria": ["question_coverage"]
     },
     "solution": {
       "description": "Solution page scoring emphasizes problem-solution fit and comprehensive explanation",
-      "emphasizedCriteria": ["direct_answer", "question_coverage", "internal_linking"],
+      "emphasizedCriteria": ["direct_answer", "question_coverage", "internal_linking", "conversational_tone", "snippet_optimization", "multimedia_richness", "entity_clarity"],
       "deemphasizedCriteria": []
     },
     "resource": {
-      "description": "Resource page scoring emphasizes depth, citations, and comprehensive coverage",
-      "emphasizedCriteria": ["question_coverage", "eeat_signals", "outbound_links", "schema_markup"],
+      "description": "Resource page scoring emphasizes depth, citations, comprehensive coverage, and unique insights",
+      "emphasizedCriteria": ["question_coverage", "eeat_signals", "outbound_links", "schema_markup", "content_freshness", "snippet_optimization", "multimedia_richness", "original_research"],
       "deemphasizedCriteria": []
     },
     "conversion": {
       "description": "Conversion page scoring emphasizes clarity, trust signals, and technical performance",
-      "emphasizedCriteria": ["direct_answer", "eeat_signals", "performance", "accessibility"],
+      "emphasizedCriteria": ["direct_answer", "eeat_signals", "performance", "accessibility", "conversational_tone", "snippet_optimization"],
       "deemphasizedCriteria": ["question_coverage"]
     }
   },
   "notes": [
-    "This is a default rubric based on industry best practices for Answer Engine Optimization",
-    "For production use, process actual AEO principle PDFs using the pdf-processor service",
-    "PDFs should be placed in server/data/aeo-guides/ and processed via the processAeoGuide function",
+    "This rubric is based on 'SEO for AI' PDF (Inbound.no, October 2025) analysis and industry best practices",
+    "Version 1.1 adds 6 new criteria: content_freshness, conversational_tone, snippet_optimization, multimedia_richness, original_research, entity_clarity",
+    "New criteria prioritize AI Overviews visibility, featured snippet optimization, and conversational content",
+    "For additional AEO guides, place PDFs in server/data/aeo-guides/ and process via the processAeoGuide function",
     "Processed principles will be saved to server/data/aeo-principles/ with timestamps",
-    "Update this file after processing real PDF guides to reflect official AEO principles"
+    "Key insights: Fresh content (quarterly updates), conversational tone, 40-60 word snippet answers, proprietary research are highly citable"
   ]
 }

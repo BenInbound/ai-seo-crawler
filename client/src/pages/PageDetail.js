@@ -57,7 +57,7 @@ function PageDetailPage() {
       // Trigger rescore job
       const response = await api.post(`/pages/${pageId}/rescore`);
 
-      // Optionally poll for completion or show success message
+      // Show success message
       alert(
         'Rescoring initiated! The page will be rescored in the background. Refresh to see updated results.'
       );
@@ -68,7 +68,7 @@ function PageDetailPage() {
       }, 2000);
     } catch (err) {
       console.error('Error rescoring page:', err);
-      alert(err.response?.data?.error || 'Failed to initiate rescoring');
+      alert(err.error || err.details || 'Failed to initiate rescoring');
     }
   };
 
