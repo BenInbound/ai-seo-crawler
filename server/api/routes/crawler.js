@@ -216,12 +216,24 @@ router.post(
       });
 
       // Add job to queue
-      await addCrawlJob({
+      const job = await addCrawlJob({
         crawlRunId: crawlRun.id,
         projectId: projectId,
         userId: req.userId,
         config: crawlRun.config_snapshot
       });
+
+      // Check if job was successfully queued
+      if (job.state === 'failed') {
+        // Mark crawl run as failed since it couldn't be queued
+        await CrawlRunModel.fail(crawlRun.id, `Failed to queue job: ${job.failedReason}`);
+
+        return res.status(500).json({
+          error: 'Failed to start crawl',
+          message: 'Worker queue is unavailable. Please try again in a moment.',
+          details: job.failedReason
+        });
+      }
 
       console.log(`Crawl job queued: ${crawlRun.id} for project ${projectId}`);
 
