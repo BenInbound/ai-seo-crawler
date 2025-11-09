@@ -31,6 +31,15 @@ import ScoreBreakdown from '../scoring/ScoreBreakdown';
 function PageDetail({ page, onRescore, loading = false }) {
   const [showSnapshot, setShowSnapshot] = useState(false);
   const [isRescoring, setIsRescoring] = useState(false);
+  const [pageType, setPageType] = useState(page?.page_type || 'resource');
+  const [isUpdatingPageType, setIsUpdatingPageType] = useState(false);
+
+  // Update local state when page changes
+  React.useEffect(() => {
+    if (page?.page_type) {
+      setPageType(page.page_type);
+    }
+  }, [page?.page_type]);
 
   if (loading || !page) {
     return (
@@ -59,6 +68,29 @@ function PageDetail({ page, onRescore, loading = false }) {
     }
   };
 
+  const handlePageTypeChange = async (newPageType) => {
+    if (newPageType === pageType || isUpdatingPageType) return;
+
+    setIsUpdatingPageType(true);
+    try {
+      const api = (await import('../../services/api')).default;
+      await api.patch(`/pages/${page.id}`, { page_type: newPageType });
+      setPageType(newPageType);
+
+      // Refresh page data after a delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error('Error updating page type:', error);
+      alert('Failed to update page type. Please try again.');
+      // Revert to original
+      setPageType(page.page_type);
+    } finally {
+      setIsUpdatingPageType(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
     return new Date(dateString).toLocaleString();
@@ -68,6 +100,15 @@ function PageDetail({ page, onRescore, loading = false }) {
     if (!type) return 'Unknown';
     return type.charAt(0).toUpperCase() + type.slice(1);
   };
+
+  const pageTypes = [
+    { value: 'homepage', label: 'Homepage' },
+    { value: 'blog', label: 'Blog' },
+    { value: 'product', label: 'Product' },
+    { value: 'solution', label: 'Solution' },
+    { value: 'resource', label: 'Resource' },
+    { value: 'conversion', label: 'Conversion' }
+  ];
 
   return (
     <div className="space-y-6">
@@ -105,10 +146,25 @@ function PageDetail({ page, onRescore, loading = false }) {
             <div className="p-2 bg-blue-50 rounded-lg">
               <Tag className="w-5 h-5 text-blue-600" />
             </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase">Page Type</p>
-              <p className="text-sm font-medium text-gray-900">
-                {formatPageType(page.page_type)}
+            <div className="flex-1">
+              <label htmlFor="page-type" className="text-xs text-gray-500 uppercase block mb-1">
+                Page Type
+              </label>
+              <select
+                id="page-type"
+                value={pageType || 'resource'}
+                onChange={(e) => handlePageTypeChange(e.target.value)}
+                disabled={isUpdatingPageType}
+                className="text-sm font-medium text-gray-900 border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed w-full"
+              >
+                {pageTypes.map(type => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                {isUpdatingPageType ? 'Updating...' : 'Auto-detected (can be changed)'}
               </p>
             </div>
           </div>

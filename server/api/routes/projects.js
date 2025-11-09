@@ -526,4 +526,70 @@ router.get('/pages/:pageId', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * PATCH /api/pages/:pageId
+ *
+ * Update page details (e.g., manually override page type)
+ */
+router.patch('/pages/:pageId', requireAuth, async (req, res) => {
+  try {
+    const PageModel = require('../../models/page');
+    const { pageId } = req.params;
+    const { page_type } = req.body;
+
+    // Get page
+    const page = await PageModel.getById(pageId);
+
+    if (!page) {
+      return res.status(404).json({
+        error: 'Not Found',
+        details: 'Page not found'
+      });
+    }
+
+    // Check project access
+    const hasAccess = await hasProjectAccess(req.userId, page.project_id);
+
+    if (!hasAccess) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        details: 'You do not have access to this page'
+      });
+    }
+
+    // Validate page type if provided
+    const validPageTypes = ['homepage', 'product', 'solution', 'blog', 'resource', 'conversion'];
+    if (page_type && !validPageTypes.includes(page_type)) {
+      return res.status(400).json({
+        error: 'Invalid page type',
+        details: `page_type must be one of: ${validPageTypes.join(', ')}`
+      });
+    }
+
+    // Update page
+    const updates = {};
+    if (page_type) {
+      updates.page_type = page_type;
+    }
+
+    await PageModel.update(pageId, updates);
+
+    // Get updated page
+    const updatedPage = await PageModel.getById(pageId);
+
+    res.status(200).json({
+      id: updatedPage.id,
+      url: updatedPage.url,
+      page_type: updatedPage.page_type,
+      message: 'Page updated successfully'
+    });
+  } catch (error) {
+    console.error('Update page error:', error);
+    res.status(500).json({
+      error: 'Failed to update page',
+      details: error.message
+    });
+  }
+});
+
 module.exports = router;
