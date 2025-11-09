@@ -395,11 +395,58 @@ async function hasProjectAccess(userId, projectId) {
   return !!data;
 }
 
+/**
+ * Get all projects across all organizations
+ * Used for shared project view where all users can see all projects
+ *
+ * @param {Object} [options] - Query options
+ * @param {number} [options.limit] - Max results
+ * @param {number} [options.offset] - Pagination offset
+ * @param {string} [options.orderBy] - Field to order by (default: 'created_at')
+ * @param {boolean} [options.ascending] - Sort order (default: false)
+ * @returns {Promise<Array>} - Array of project records with organization info
+ */
+async function getAllProjects(options = {}) {
+  const { limit, offset, orderBy = 'created_at', ascending = false } = options;
+
+  let query = supabase
+    .from('projects')
+    .select(`
+      *,
+      organizations (
+        id,
+        name
+      )
+    `)
+    .order(orderBy, { ascending });
+
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  if (offset) {
+    query = query.range(offset, offset + (limit || 10) - 1);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(`Failed to get all projects: ${error.message}`);
+  }
+
+  // Flatten organization data into project object
+  return data.map(project => ({
+    ...project,
+    organization_name: project.organizations?.name || 'Unknown'
+  }));
+}
+
 module.exports = {
   setSupabaseClient,
   createProject,
   findProjectById,
   getOrganizationProjects,
+  getAllProjects,
   updateProject,
   deleteProject,
   getProjectWithStats,

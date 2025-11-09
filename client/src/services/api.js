@@ -162,6 +162,7 @@ export const members = {
 
 // Project endpoints
 export const projects = {
+  listAll: (params = {}) => get('/projects', { params }),
   list: (orgId, params = {}) => get(`/organizations/${orgId}/projects`, { params }),
   create: (orgId, data) => post(`/organizations/${orgId}/projects`, data),
   get: projectId => get(`/projects/${projectId}`),
