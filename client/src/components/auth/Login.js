@@ -65,7 +65,7 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-12">
+    <div className="flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8 py-16">
       <div className="max-w-md w-full">
         <div className="flex justify-center mb-6">
           <img src={logo} alt="Inbound" className="h-8" />

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, ArrowUpDown, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, ExternalLink, TrendingUp, TrendingDown, MinusCircle } from 'lucide-react';
 
 /**
  * PageTable Component
@@ -39,10 +39,21 @@ function PageTable({ pages = [], onPageClick, loading = false }) {
       // Page type filter
       const matchesType = filterPageType === 'all' || page.page_type === filterPageType;
 
-      // Score range filter
-      const score = page.overall_score || 0;
-      const matchesMinScore = !filterScoreMin || score >= parseInt(filterScoreMin, 10);
-      const matchesMaxScore = !filterScoreMax || score <= parseInt(filterScoreMax, 10);
+      // Score range filter - only apply to scored pages
+      const hasScore = page.overall_score != null && page.scored_at;
+      let matchesMinScore = true;
+      let matchesMaxScore = true;
+
+      if (hasScore) {
+        const score = page.overall_score;
+        matchesMinScore = !filterScoreMin || score >= parseInt(filterScoreMin, 10);
+        matchesMaxScore = !filterScoreMax || score <= parseInt(filterScoreMax, 10);
+      } else {
+        // If page is not scored and user is filtering by score, exclude it
+        if (filterScoreMin || filterScoreMax) {
+          return false;
+        }
+      }
 
       return matchesSearch && matchesType && matchesMinScore && matchesMaxScore;
     });
@@ -263,7 +274,7 @@ function PageTable({ pages = [], onPageClick, loading = false }) {
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => onPageClick && onPageClick(page)}
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 max-w-md">
                     <div className="flex items-center space-x-2">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
@@ -283,12 +294,21 @@ function PageTable({ pages = [], onPageClick, loading = false }) {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      {getScoreIcon(page.overall_score || 0)}
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getScoreColor(page.overall_score || 0)}`}>
-                        {page.overall_score || 0}/100
-                      </span>
-                    </div>
+                    {page.overall_score != null && page.scored_at ? (
+                      <div className="flex items-center space-x-2">
+                        {getScoreIcon(page.overall_score)}
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getScoreColor(page.overall_score)}`}>
+                          {page.overall_score}/100
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <MinusCircle className="w-4 h-4 text-gray-400" />
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+                          Not analyzed
+                        </span>
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {page.scored_at ? new Date(page.scored_at).toLocaleDateString() : 'Never'}
