@@ -27,10 +27,10 @@ import ScoreBreakdown from '../scoring/ScoreBreakdown';
  * - page: Page object with score data
  * - onRescore: Callback to trigger rescoring
  * - loading: Boolean indicating loading state
+ * - isAnalyzing: Boolean indicating if analysis is in progress
  */
-function PageDetail({ page, onRescore, loading = false }) {
+function PageDetail({ page, onRescore, loading = false, isAnalyzing = false }) {
   const [showSnapshot, setShowSnapshot] = useState(false);
-  const [isRescoring, setIsRescoring] = useState(false);
   const [pageType, setPageType] = useState(page?.page_type || 'resource');
   const [isUpdatingPageType, setIsUpdatingPageType] = useState(false);
 
@@ -58,13 +58,8 @@ function PageDetail({ page, onRescore, loading = false }) {
   }
 
   const handleRescore = async () => {
-    if (onRescore && !isRescoring) {
-      setIsRescoring(true);
-      try {
-        await onRescore(page.id);
-      } finally {
-        setIsRescoring(false);
-      }
+    if (onRescore && !isAnalyzing) {
+      await onRescore(page.id);
     }
   };
 
@@ -112,6 +107,22 @@ function PageDetail({ page, onRescore, loading = false }) {
 
   return (
     <div className="space-y-6">
+      {/* Analyzing Status Banner */}
+      {isAnalyzing && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3">
+            <RefreshCw className="w-5 h-5 text-blue-600 animate-spin flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-blue-900">Analysis in Progress</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Your page is being analyzed. This usually takes 10-30 seconds.
+                The results will appear automatically when complete - no need to refresh!
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="bg-white rounded-xl shadow-soft p-6">
         <div className="flex items-start justify-between mb-4">
@@ -132,11 +143,11 @@ function PageDetail({ page, onRescore, loading = false }) {
 
           <button
             onClick={handleRescore}
-            disabled={isRescoring}
+            disabled={isAnalyzing}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <RefreshCw className={`w-4 h-4 ${isRescoring ? 'animate-spin' : ''}`} />
-            <span>{isRescoring ? 'Analyzing...' : 'Analyze'}</span>
+            <RefreshCw className={`w-4 h-4 ${isAnalyzing ? 'animate-spin' : ''}`} />
+            <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
           </button>
         </div>
 

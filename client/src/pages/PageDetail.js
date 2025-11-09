@@ -27,48 +27,102 @@ function PageDetailPage() {
   const [page, setPage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState(null);
 
   // Fetch page details
-  useEffect(() => {
-    if (!pageId || !currentOrg) return;
+  const fetchPageDetails = async (showLoadingSpinner = true) => {
+    try {
+      if (!pageId) return;
 
-    const fetchPageDetails = async () => {
-      try {
+      if (showLoadingSpinner) {
         setLoading(true);
-        setError(null);
+      }
+      setError(null);
 
-        // Fetch page with score data
-        const response = await api.get(`/pages/${pageId}`);
-        setPage(response.data);
-      } catch (err) {
-        console.error('Error fetching page details:', err);
-        setError(err.response?.data?.error || 'Failed to load page details');
-      } finally {
+      // Fetch page with score data
+      const response = await api.get(`/pages/${pageId}`);
+      setPage(response.data);
+
+      return response.data;
+    } catch (err) {
+      console.error('Error fetching page details:', err);
+      setError(err.response?.data?.error || 'Failed to load page details');
+      return null;
+    } finally {
+      if (showLoadingSpinner) {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
+    if (!pageId || !currentOrg) return;
     fetchPageDetails();
   }, [pageId, currentOrg]);
+
+  // Cleanup polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   // Handle rescore
   const handleRescore = async (pageId) => {
     try {
+      // Store the current score timestamp to detect when it updates
+      const currentScoredAt = page?.scored_at;
+
       // Trigger rescore job
-      const response = await api.post(`/pages/${pageId}/rescore`);
+      setIsAnalyzing(true);
+      await api.post(`/pages/${pageId}/rescore`);
 
-      // Show success message
-      alert(
-        'Rescoring initiated! The page will be rescored in the background. Refresh to see updated results.'
-      );
+      // Start polling for updates every 3 seconds
+      const interval = setInterval(async () => {
+        const updatedPage = await fetchPageDetails(false);
 
-      // Refresh page data after a delay
+        if (updatedPage) {
+          // Check if the page has been rescored (scored_at has changed)
+          const newScoredAt = updatedPage.scored_at;
+
+          if (newScoredAt && newScoredAt !== currentScoredAt) {
+            // Score has been updated!
+            clearInterval(interval);
+            setPollingInterval(null);
+            setIsAnalyzing(false);
+
+            // Show success message
+            const scoreChange = updatedPage.overall_score - (page?.overall_score || 0);
+            const changeText = scoreChange > 0
+              ? `increased by ${scoreChange} points`
+              : scoreChange < 0
+                ? `decreased by ${Math.abs(scoreChange)} points`
+                : 'remained the same';
+
+            alert(`Analysis complete! Your score ${changeText}. New score: ${updatedPage.overall_score}/100`);
+          }
+        }
+      }, 3000);
+
+      setPollingInterval(interval);
+
+      // Safety timeout: stop polling after 5 minutes
       setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+        if (interval) {
+          clearInterval(interval);
+          setPollingInterval(null);
+          setIsAnalyzing(false);
+          alert('Analysis is taking longer than expected. Please refresh the page to check results.');
+        }
+      }, 300000); // 5 minutes
+
     } catch (err) {
       console.error('Error rescoring page:', err);
-      alert(err.error || err.details || 'Failed to initiate rescoring');
+      setIsAnalyzing(false);
+      alert(err.error || err.details || 'Failed to initiate analysis');
     }
   };
 
@@ -191,7 +245,12 @@ function PageDetailPage() {
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-8">
-        <PageDetailComponent page={page} onRescore={handleRescore} loading={false} />
+        <PageDetailComponent
+          page={page}
+          onRescore={handleRescore}
+          loading={false}
+          isAnalyzing={isAnalyzing}
+        />
       </main>
 
       {/* Footer */}
