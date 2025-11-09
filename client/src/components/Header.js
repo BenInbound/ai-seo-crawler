@@ -3,7 +3,7 @@ import { Search, Zap } from 'lucide-react';
 
 function Header() {
   return (
-    <header className="bg-white shadow-soft border-b border-gray-100">
+    <header className="bg-[#F8F8F4] shadow-soft border-b border-gray-100">
       <div className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">

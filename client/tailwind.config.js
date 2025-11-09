@@ -6,7 +6,13 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['TT Norms Pro', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+      },
       colors: {
+        gray: {
+          50: '#F8F8F4',
+        },
         primary: {
           50: '#eff6ff',
           500: '#3b82f6',
