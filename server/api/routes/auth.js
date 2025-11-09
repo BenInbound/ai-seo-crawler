@@ -20,6 +20,7 @@ const {
 } = require('../../models/user');
 const { createOrganization } = require('../../models/organization');
 const { addMember } = require('../../models/organization-member');
+const { generateAccessToken } = require('../../services/auth/session');
 
 const router = express.Router();
 
@@ -159,15 +160,18 @@ router.post('/login', async (req, res) => {
     const { updateLastLogin } = require('../../models/user');
     await updateLastLogin(user.id);
 
-    // Generate JWT token
-    const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+    // Get user's organizations for token
+    const organizations = await getUserOrganizations(user.id);
+
+    // Generate JWT token using session service
+    const token = generateAccessToken({
+      userId: user.id,
+      email: user.email,
+      organizations: organizations.map(org => ({
+        orgId: org.id,
+        role: org.role
+      }))
+    });
 
     // Return token and sanitized user info
     const sanitized = sanitizeUser(user);
@@ -178,7 +182,8 @@ router.post('/login', async (req, res) => {
       user: {
         id: sanitized.id,
         email: sanitized.email,
-        name: sanitized.name
+        name: sanitized.name,
+        is_admin: sanitized.is_admin || false
       }
     });
   } catch (error) {
@@ -220,7 +225,7 @@ router.get('/me', async (req, res) => {
 
     // Get user with organizations
     const { findUserById } = require('../../models/user');
-    const user = await findUserById(decoded.userId);
+    const user = await findUserById(decoded.sub || decoded.userId);
 
     if (!user) {
       return res.status(401).json({
@@ -239,6 +244,7 @@ router.get('/me', async (req, res) => {
       id: sanitized.id,
       email: sanitized.email,
       name: sanitized.name,
+      is_admin: sanitized.is_admin || false,
       organizations: organizations.map(org => ({
         id: org.id,
         name: org.name,

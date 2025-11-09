@@ -37,7 +37,7 @@ async function requireAuth(req, res, next) {
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      req.userId = decoded.userId;
+      req.userId = decoded.sub || decoded.userId;
       next();
     } catch (jwtError) {
       return res.status(401).json({

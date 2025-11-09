@@ -54,7 +54,7 @@ async function authenticate(req, res, next) {
     // Fetch user from database to ensure they still exist
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, email, name, preferences')
+      .select('id, email, name, preferences, is_admin')
       .eq('id', decoded.sub)
       .single();
 
@@ -71,6 +71,7 @@ async function authenticate(req, res, next) {
       email: user.email,
       name: user.name,
       preferences: user.preferences,
+      is_admin: user.is_admin || false,
       organizations: decoded.organizations || []
     };
     req.token = decoded;
@@ -127,7 +128,7 @@ async function optionalAuthenticate(req, res, next) {
     // Fetch user from database
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
-      .select('id, email, name, preferences')
+      .select('id, email, name, preferences, is_admin')
       .eq('id', decoded.sub)
       .single();
 
@@ -143,6 +144,7 @@ async function optionalAuthenticate(req, res, next) {
       email: user.email,
       name: user.name,
       preferences: user.preferences,
+      is_admin: user.is_admin || false,
       organizations: decoded.organizations || []
     };
     req.token = decoded;
@@ -221,27 +223,35 @@ function getUserRoleInOrganization(req, organizationId) {
 
 /**
  * Check if user is admin in any organization
- * For now, considers any user with an 'admin' role in any organization as admin
  * @param {object} req - Express request object
- * @returns {boolean} True if user is admin
+ * @returns {boolean} True if user is admin in any organization
  */
-function isAdmin(req) {
+function isOrgAdmin(req) {
   const orgs = getUserOrganizations(req);
   return orgs.some(org => org.role === 'admin');
 }
 
 /**
- * Require admin role for a route
- * Returns 403 if user is not an admin
+ * Check if user is platform admin
+ * @param {object} req - Express request object
+ * @returns {boolean} True if user is platform admin
+ */
+function isPlatformAdmin(req) {
+  return req.user && req.user.is_admin === true;
+}
+
+/**
+ * Require platform admin role for a route
+ * Returns 403 if user is not a platform admin
  * @param {object} req - Express request object
  * @param {object} res - Express response object
  * @param {function} next - Express next middleware function
  */
 function requireAdmin(req, res, next) {
-  if (!isAdmin(req)) {
+  if (!isPlatformAdmin(req)) {
     return res.status(403).json({
       error: 'Forbidden',
-      message: 'Admin role required'
+      message: 'Platform admin role required'
     });
   }
   next();
@@ -255,6 +265,7 @@ module.exports = {
   getUserOrganizations,
   userBelongsToOrganization,
   getUserRoleInOrganization,
-  isAdmin,
+  isOrgAdmin,
+  isPlatformAdmin,
   requireAdmin
 };

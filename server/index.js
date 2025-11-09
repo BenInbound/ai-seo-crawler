@@ -25,7 +25,6 @@ CrawlRunModel.setSupabaseClient(supabaseAdmin);
 PageModel.setSupabaseClient(supabaseAdmin);
 SnapshotModel.setSupabaseClient(supabaseAdmin);
 ScoreModel.setSupabaseClient(supabaseAdmin);
-adminRoutes.setSupabaseClient(supabaseAdmin);
 
 // Import middleware
 const { requestLogger, performanceLogger, errorLogger } = require('./middleware/logger');
@@ -35,6 +34,9 @@ const { optionalAuthenticate } = require('./middleware/auth');
 // Import routes
 const authRoutes = require('./api/routes/auth');
 const adminRoutes = require('./api/routes/admin');
+
+// Set Supabase client on admin routes
+adminRoutes.setSupabaseClient(supabaseAdmin);
 const organizationRoutes = require('./api/routes/organizations');
 const projectRoutes = require('./api/routes/projects');
 const crawlerRoutes = require('./api/routes/crawler');

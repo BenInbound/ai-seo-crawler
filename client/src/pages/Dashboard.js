@@ -13,6 +13,7 @@ import { useOrg } from '../contexts/OrgContext';
 import OrgSwitcher from '../components/organizations/OrgSwitcher';
 import ProjectList from '../components/projects/ProjectList';
 import ProjectForm from '../components/projects/ProjectForm';
+import PendingUsers from '../components/admin/PendingUsers';
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -134,6 +135,14 @@ function Dashboard() {
           </div>
         ) : (
           <div>
+            {/* Admin Section: Pending User Approvals */}
+            {user?.is_admin && (
+              <div className="mb-8">
+                <PendingUsers />
+              </div>
+            )}
+
+            {/* Project List */}
             <ProjectList onCreateClick={handleCreateProject} />
           </div>
         )}
