@@ -200,16 +200,17 @@ class ContentAnalyzer {
     }
 
     // URL-based detection patterns
+    // Using regex for more flexible matching (handles plurals, compound words, variations)
     const urlPatterns = {
-      blog: ['/blog/', '/blogg/', '/article/', '/post/', '/news/'],
-      product: ['/product/', '/produkt/', '/shop/', '/buy/', '/item/'],
-      solution: ['/solution/', '/løsning/', '/service/', '/tjeneste/', '/feature/'],
-      resource: ['/resource/', '/guide/', '/tutorial/', '/documentation/', '/docs/', '/help/', '/support/', '/faq/'],
-      conversion: ['/pricing/', '/price/', '/contact/', '/kontakt/', '/signup/', '/register/', '/demo/', '/trial/', '/get-started/']
+      blog: [/\/blog[gs]?/, /blogg/, /\/article/, /\/post/, /\/news/, /nyheter/],
+      product: [/\/products?/, /produkter?/, /\/shop/, /\/buy/, /\/item/, /kjop/],
+      solution: [/\/solutions?/, /losning/, /løsning/, /services?/, /tjenester?/, /\/feature/],
+      resource: [/\/resources?/, /\/guide/, /tutorial/, /documentation/, /\/docs/, /\/help/, /support/, /\/faq/, /hjelp/],
+      conversion: [/\/pricing/, /\/price/, /\/contact/, /kontakt/, /\/signup/, /register/, /\/demo/, /\/trial/, /get-started/, /bestill/]
     };
 
     for (const [type, patterns] of Object.entries(urlPatterns)) {
-      if (patterns.some(pattern => url.includes(pattern))) {
+      if (patterns.some(pattern => pattern.test(url))) {
         return type;
       }
     }
