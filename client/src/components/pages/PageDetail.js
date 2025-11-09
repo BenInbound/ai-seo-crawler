@@ -136,7 +136,7 @@ function PageDetail({ page, onRescore, loading = false }) {
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-4 h-4 ${isRescoring ? 'animate-spin' : ''}`} />
-            <span>{isRescoring ? 'Rescoring...' : 'Rescore'}</span>
+            <span>{isRescoring ? 'Analyzing...' : 'Analyze'}</span>
           </button>
         </div>
 

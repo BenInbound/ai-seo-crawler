@@ -140,7 +140,7 @@ function ScoreBreakdown({
         </div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Not Scored Yet</h3>
         <p className="text-gray-600 mb-4">
-          This page hasn't been scored yet. Click the "Rescore" button above to analyze this page and get detailed AEO scores.
+          This page hasn't been scored yet. Click the "Analyze" button above to analyze this page and get detailed AEO scores.
         </p>
         <div className="text-sm text-gray-500">
           <p>Scoring will analyze:</p>
