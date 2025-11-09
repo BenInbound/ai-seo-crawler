@@ -59,7 +59,7 @@ function ProjectDetail() {
     try {
       setPagesLoading(true);
       const response = await api.get(`/projects/${projectId}/pages`);
-      setPages(response.data.data || []);
+      setPages(response.data.pages || []);
     } catch (err) {
       console.error('Error fetching pages:', err);
       // Don't show error for pages - just log it

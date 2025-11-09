@@ -12,8 +12,9 @@
 const express = require('express');
 const PageScoreModel = require('../../models/score');
 const PageModel = require('../../models/page');
+const SnapshotModel = require('../../models/snapshot');
 const { hasProjectAccess } = require('../../models/project');
-const { addJob } = require('../../services/jobs/queue');
+const { addScoringJob, addBatchRescoreJob } = require('../../services/jobs/queue');
 
 const router = express.Router();
 
@@ -119,9 +120,15 @@ router.get('/:scoreId', requireAuth, async (req, res) => {
 router.post('/pages/:pageId/rescore', requireAuth, async (req, res) => {
   try {
     const { pageId } = req.params;
+    console.log('[Rescore] Starting rescore for page:', pageId);
 
     // Get page
     const page = await PageModel.getById(pageId);
+    console.log('[Rescore] Page data:', {
+      id: page?.id,
+      current_snapshot_id: page?.current_snapshot_id,
+      last_crawl_run_id: page?.last_crawl_run_id
+    });
 
     if (!page) {
       return res.status(404).json({
@@ -140,20 +147,57 @@ router.post('/pages/:pageId/rescore', requireAuth, async (req, res) => {
       });
     }
 
-    // Add rescore job to queue
-    const job = await addJob('score-queue', 'rescore-page', {
-      pageId,
-      useCachedSnapshot: true
+    // Get current snapshot
+    if (!page.current_snapshot_id) {
+      console.error('[Rescore] Page has no snapshot:', pageId);
+      return res.status(400).json({
+        error: 'Bad Request',
+        details: 'Page has no snapshot to score. Please crawl the page first.'
+      });
+    }
+
+    const snapshot = await SnapshotModel.getById(page.current_snapshot_id);
+    console.log('[Rescore] Snapshot data:', { id: snapshot?.id, crawl_run_id: snapshot?.crawl_run_id });
+
+    if (!snapshot) {
+      console.error('[Rescore] Snapshot not found:', page.current_snapshot_id);
+      return res.status(404).json({
+        error: 'Not Found',
+        details: 'Page snapshot not found'
+      });
+    }
+
+    // Use the page's last crawl run ID (required by scoring processor)
+    const crawlRunId = page.last_crawl_run_id || snapshot.crawl_run_id;
+    console.log('[Rescore] Using crawl run ID:', crawlRunId);
+
+    if (!crawlRunId) {
+      console.error('[Rescore] No crawl run ID found for page:', pageId);
+      return res.status(400).json({
+        error: 'Bad Request',
+        details: 'Cannot determine crawl run for this page'
+      });
+    }
+
+    // Add scoring job to queue with single snapshot
+    console.log('[Rescore] Queueing job with data:', { crawlRunId, snapshotIds: [snapshot.id] });
+    const job = await addScoringJob({
+      crawlRunId,
+      snapshotIds: [snapshot.id],
+      tokenLimit: null,
+      isManualRescore: true
     });
+    console.log('[Rescore] Job queued successfully:', job.id);
 
     res.status(202).json({
       message: 'Rescoring initiated',
       jobId: job.id,
       pageId,
+      snapshotId: snapshot.id,
       status: 'queued'
     });
   } catch (error) {
-    console.error('Error initiating rescore:', error);
+    console.error('[Rescore] Error initiating rescore:', error);
     res.status(500).json({
       error: 'Internal Server Error',
       details: error.message
@@ -201,9 +245,43 @@ router.post('/projects/:projectId/rescore', requireAuth, async (req, res) => {
       });
     }
 
-    // Add batch rescore job to queue
-    const job = await addJob('score-queue', 'batch-rescore', {
-      pageIds: pagesToRescore,
+    // Get all pages and their snapshots
+    const snapshotIds = [];
+    let crawlRunId = null;
+
+    for (const pageId of pagesToRescore) {
+      const page = await PageModel.getById(pageId);
+
+      if (!page || !page.current_snapshot_id) {
+        continue; // Skip pages without snapshots
+      }
+
+      snapshotIds.push(page.current_snapshot_id);
+
+      // Use the first page's crawl run ID
+      if (!crawlRunId) {
+        crawlRunId = page.last_crawl_run_id;
+      }
+    }
+
+    if (snapshotIds.length === 0) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        details: 'No pages with snapshots found to rescore'
+      });
+    }
+
+    if (!crawlRunId) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        details: 'Cannot determine crawl run for these pages'
+      });
+    }
+
+    // Add scoring job to queue with all snapshots
+    const job = await addScoringJob({
+      crawlRunId,
+      snapshotIds,
       tokenLimit: tokenLimit || null
     });
 
@@ -211,7 +289,7 @@ router.post('/projects/:projectId/rescore', requireAuth, async (req, res) => {
       message: 'Batch rescoring initiated',
       jobId: job.id,
       projectId,
-      pageCount: pagesToRescore.length,
+      pageCount: snapshotIds.length,
       status: 'queued'
     });
   } catch (error) {

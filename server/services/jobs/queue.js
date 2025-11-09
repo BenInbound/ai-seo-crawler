@@ -145,14 +145,20 @@ async function addCrawlJob(data) {
 /**
  * Add scoring job to queue
  * @param {object} data - Job data
- * @param {string} data.pageId - Page UUID
- * @param {string} data.snapshotId - Snapshot UUID
- * @param {string} data.rubricVersion - Rubric version
+ * @param {string} data.crawlRunId - Crawl run UUID
+ * @param {Array<string>} data.snapshotIds - Array of snapshot UUIDs to score
+ * @param {number} data.tokenLimit - Optional token limit for this scoring job
+ * @param {boolean} data.isManualRescore - Whether this is a manual rescore (uses unique ID)
  * @returns {Promise<object>} Job instance
  */
 async function addScoringJob(data) {
+  // For manual rescores, use a unique job ID to avoid conflicts
+  const jobId = data.isManualRescore
+    ? `score-manual-${Date.now()}-${data.snapshotIds[0]}`
+    : `score-${data.crawlRunId}`;
+
   return scoringQueue.add(JOB_TYPES.SCORE, data, {
-    jobId: `score-${data.snapshotId}`,
+    jobId,
     priority: data.priority || 2
   });
 }

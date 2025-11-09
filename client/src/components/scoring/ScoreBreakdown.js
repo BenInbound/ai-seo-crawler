@@ -79,6 +79,7 @@ function ScoreBreakdown({
 
   // Format criterion name
   const formatCriterionName = (name) => {
+    if (!name) return 'Unknown';
     return name
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -128,6 +129,31 @@ function ScoreBreakdown({
   });
 
   const overallColors = getScoreColor(overallScore);
+  const hasScores = Object.keys(criteriaScores).length > 0;
+
+  // If no scores, show "not scored yet" state
+  if (!hasScores) {
+    return (
+      <div className="bg-white rounded-xl shadow-soft overflow-hidden p-8 text-center">
+        <div className="text-gray-400 mb-4">
+          <Info className="w-12 h-12 mx-auto" />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Not Scored Yet</h3>
+        <p className="text-gray-600 mb-4">
+          This page hasn't been scored yet. Click the "Rescore" button above to analyze this page and get detailed AEO scores.
+        </p>
+        <div className="text-sm text-gray-500">
+          <p>Scoring will analyze:</p>
+          <ul className="mt-2 space-y-1">
+            <li>• Content quality and AI optimization</li>
+            <li>• E-A-T signals (Expertise, Authority, Trust)</li>
+            <li>• Technical SEO factors</li>
+            <li>• Structured data implementation</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-soft overflow-hidden">

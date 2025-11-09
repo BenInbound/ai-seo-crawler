@@ -38,7 +38,7 @@ function PageDetailPage() {
         setError(null);
 
         // Fetch page with score data
-        const response = await api.get(`/api/pages/${pageId}`);
+        const response = await api.get(`/pages/${pageId}`);
         setPage(response.data);
       } catch (err) {
         console.error('Error fetching page details:', err);
@@ -55,7 +55,7 @@ function PageDetailPage() {
   const handleRescore = async (pageId) => {
     try {
       // Trigger rescore job
-      const response = await api.post(`/api/pages/${pageId}/rescore`);
+      const response = await api.post(`/pages/${pageId}/rescore`);
 
       // Optionally poll for completion or show success message
       alert(

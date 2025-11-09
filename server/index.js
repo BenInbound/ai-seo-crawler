@@ -14,7 +14,7 @@ const ProjectModel = require('./models/project');
 const CrawlRunModel = require('./models/crawl-run');
 const PageModel = require('./models/page');
 const SnapshotModel = require('./models/snapshot');
-// const ScoreModel = require('./models/score'); // TODO: Create score model
+const ScoreModel = require('./models/score');
 
 // Set Supabase client on all models
 UserModel.setSupabaseClient(supabaseAdmin);
@@ -24,7 +24,7 @@ ProjectModel.setSupabaseClient(supabaseAdmin);
 CrawlRunModel.setSupabaseClient(supabaseAdmin);
 PageModel.setSupabaseClient(supabaseAdmin);
 SnapshotModel.setSupabaseClient(supabaseAdmin);
-// ScoreModel.setSupabaseClient(supabaseAdmin); // TODO: Uncomment when score model is created
+ScoreModel.setSupabaseClient(supabaseAdmin);
 
 // Import middleware
 const { requestLogger, performanceLogger, errorLogger } = require('./middleware/logger');
@@ -36,6 +36,7 @@ const authRoutes = require('./api/routes/auth');
 const organizationRoutes = require('./api/routes/organizations');
 const projectRoutes = require('./api/routes/projects');
 const crawlerRoutes = require('./api/routes/crawler');
+const scoresRoutes = require('./api/routes/scores');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -48,6 +49,11 @@ const rateLimiter = new RateLimiterMemory({
 });
 
 const rateLimiterMiddleware = (req, res, next) => {
+  // Skip rate limiting in development
+  if (process.env.NODE_ENV !== 'production') {
+    return next();
+  }
+
   // Skip rate limiting for authentication endpoints
   if (req.path.startsWith('/api/auth/')) {
     return next();
@@ -88,6 +94,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api', projectRoutes); // Projects uses full paths like /organizations/:orgId/projects
 app.use('/api', crawlerRoutes); // Crawler routes use full paths like /projects/:projectId/crawls
+app.use('/api', scoresRoutes); // Scores routes use full paths like /pages/:pageId/rescore
 
 // Health check
 app.get('/api/health', (req, res) => {

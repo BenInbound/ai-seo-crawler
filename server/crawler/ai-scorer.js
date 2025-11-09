@@ -67,7 +67,7 @@ async function scorePage(snapshot, options = {}) {
     messages: [
       {
         role: 'system',
-        content: buildScoringSystemPrompt(pageType, rubricVersion, rubricCriteria.criteria)
+        content: buildScoringSystemPrompt(pageType, rubricVersion, rubricCriteria)
       },
       {
         role: 'user',
@@ -116,25 +116,20 @@ async function scorePage(snapshot, options = {}) {
  *
  * @param {string} content - Prepared/summarized content
  * @param {string} pageType - Page type
- * @param {Object} rubricCriteria - Rubric criteria info
+ * @param {Array} rubricCriteria - Array of rubric criteria objects
  * @param {string} rubricVersion - Rubric version
  * @returns {string} - Scoring prompt
  */
 function buildScoringPrompt(content, pageType, rubricCriteria, rubricVersion) {
-  const criteriaList = Object.entries(rubricCriteria.criteria)
-    .map(([name, info]) => {
-      const emphasized = rubricCriteria.emphasizedCriteria.includes(name) ? ' [EMPHASIZED]' : '';
-      const deemphasized = rubricCriteria.deemphasizedCriteria.includes(name)
-        ? ' [DEEMPHASIZED]'
-        : '';
+  const criteriaList = rubricCriteria
+    .map(criterion => {
+      const emphasized = criterion.emphasized ? ' [EMPHASIZED]' : '';
 
-      return `- ${name}${emphasized}${deemphasized}: ${info.description}`;
+      return `- ${criterion.name}${emphasized}: ${criterion.description}`;
     })
     .join('\n');
 
   return `Analyze and score this ${pageType} page for Answer Engine Optimization (AEO).
-
-Page Type Context: ${rubricCriteria.description}
 
 Criteria to Evaluate:
 ${criteriaList}

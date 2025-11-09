@@ -399,6 +399,10 @@ async function processCrawlJob(job) {
     snapshotsCreated: snapshotIds.length
   });
 
+  // DISABLED: Automatic scoring is too expensive
+  // TODO: Re-enable when implementing manual rescore button (User Story 7, Phase 9)
+  // Users should manually trigger scoring on individual pages to control costs
+  /*
   // Trigger scoring job for all snapshots created during crawl
   if (snapshotIds.length > 0) {
     try {
@@ -416,6 +420,8 @@ async function processCrawlJob(job) {
   } else {
     console.log('No new snapshots created, skipping scoring');
   }
+  */
+  console.log(`Crawl complete. ${snapshotIds.length} snapshots ready for manual scoring (automatic scoring disabled for cost control)`);
 
   return {
     crawlRunId,
