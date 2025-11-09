@@ -98,7 +98,7 @@ ${pdfText.substring(0, 15000)}`; // Limit to ~15k chars to stay within token lim
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      model: 'gpt-4-turbo',
+      // model intentionally omitted to use OPENAI_MODEL env var
       maxTokens: 3000,
       temperature: 0.3, // Lower temperature for more consistent extraction
       responseFormat: { type: 'json_object' }

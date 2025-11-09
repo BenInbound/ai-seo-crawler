@@ -62,7 +62,7 @@ async function scorePage(snapshot, options = {}) {
     rubricVersion
   );
 
-  // Call AI for scoring
+  // Call AI for scoring (uses OPENAI_MODEL env var, defaults to gpt-4-turbo)
   const aiResponse = await generateCompletion({
     messages: [
       {
@@ -74,7 +74,7 @@ async function scorePage(snapshot, options = {}) {
         content: scoringPrompt
       }
     ],
-    model: 'gpt-4-turbo',
+    // model intentionally omitted to use OPENAI_MODEL env var (e.g., gpt-4o-mini for cost savings)
     maxTokens: 2000,
     temperature: 0.3, // Lower temp for more consistent scoring
     responseFormat: { type: 'json_object' }

@@ -155,7 +155,7 @@ async function summarizeContent(content, options = {}) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      model: 'gpt-4-turbo',
+      // model intentionally omitted to use OPENAI_MODEL env var
       maxTokens: Math.min(800, targetLength * 2), // Rough token estimate
       temperature: 0.3 // Lower for more consistent summaries
     });
