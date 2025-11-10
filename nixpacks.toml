@@ -2,7 +2,7 @@
 SKIP_CLIENT_INSTALL = "true"
 
 [phases.setup]
-nixPkgs = ["nodejs_18"]
+nixPkgs = ["nodejs_20"]
 
 [phases.install]
 # Skip postinstall script - SKIP_CLIENT_INSTALL env var is set above
