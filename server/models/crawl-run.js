@@ -7,7 +7,7 @@
  * Fields:
  * - id (UUID, PK) - Unique identifier
  * - project_id (UUID, FK → projects.id, NOT NULL)
- * - run_type (TEXT, NOT NULL) - One of: 'full', 'sitemap_only', 'sample', 'delta'
+ * - run_type (TEXT, NOT NULL) - One of: 'full', 'sitemap_only', 'sample', 'delta', 'manual'
  * - status (TEXT, NOT NULL) - One of: 'queued', 'running', 'paused', 'completed', 'failed'
  * - config_snapshot (JSONB, NOT NULL) - Copy of project config at run time
  * - pages_discovered (INTEGER, DEFAULT 0) - Total URLs found
@@ -35,7 +35,7 @@ function setSupabaseClient(client) {
 /**
  * Valid run types
  */
-const RUN_TYPES = ['full', 'sitemap_only', 'sample', 'delta'];
+const RUN_TYPES = ['full', 'sitemap_only', 'sample', 'delta', 'manual'];
 
 /**
  * Valid statuses
