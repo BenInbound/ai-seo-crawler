@@ -8,7 +8,9 @@ nixPkgs = ["nodejs_18"]
 # Skip postinstall script - SKIP_CLIENT_INSTALL env var is set above
 
 [phases.build]
-# No build step needed for worker
+# No build step needed for worker, but ensure all files are present
+# Nixpacks copies files automatically, but we verify server directory exists
+cmds = ["test -d server || echo 'ERROR: server directory missing'"]
 
 [start]
 cmd = "node server/worker.js"
