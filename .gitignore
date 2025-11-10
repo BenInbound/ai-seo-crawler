@@ -29,7 +29,7 @@ coverage/
 *.sqlite
 *.sqlite3
 database.db
-database/
+/database/
 
 # Logs
 logs
