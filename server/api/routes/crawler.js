@@ -229,6 +229,7 @@ router.post(
         run_type: runType,
         config_snapshot: {
           base_url: baseUrl,
+          run_type: runType, // Pass run_type to worker so it knows how to crawl
           user_agent: project.user_agent || process.env.USER_AGENT || 'AEO-Platform-Bot/1.0',
           depth_limit: runType === 'manual' ? 0 : (project.config?.depth_limit || 3), // depth=0 for manual (single URL)
           sample_size: project.config?.sample_size || null,
