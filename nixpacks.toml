@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ["nodejs_18"]
+
+[phases.install]
+# Skip postinstall script (it tries to install client, which worker doesn't need)
+cmds = ["npm ci --only=production --ignore-scripts"]
+
+[phases.build]
+# No build step needed for worker
+
+[start]
+cmd = "node server/worker.js"
