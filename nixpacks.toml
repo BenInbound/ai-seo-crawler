@@ -2,8 +2,8 @@
 nixPkgs = ["nodejs_18"]
 
 [phases.install]
-# Skip postinstall script (it tries to install client, which worker doesn't need)
-cmds = ["npm ci --only=production --ignore-scripts"]
+# Skip postinstall script by setting SKIP_CLIENT_INSTALL env var
+cmds = ["SKIP_CLIENT_INSTALL=true npm ci --only=production"]
 
 [phases.build]
 # No build step needed for worker

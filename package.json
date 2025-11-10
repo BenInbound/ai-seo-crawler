@@ -18,7 +18,7 @@
     "format:check": "prettier --check \"**/*.{js,jsx,json,md}\"",
     "setup": "npm install && cd client && npm install",
     "install-client": "cd client && npm install",
-    "postinstall": "cd client && npm install",
+    "postinstall": "if [ \"$SKIP_CLIENT_INSTALL\" != \"true\" ]; then cd client && npm install; fi",
     "vercel-build": "cd client && npm run build"
   },
   "dependencies": {
