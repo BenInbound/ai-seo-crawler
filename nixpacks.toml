@@ -1,9 +1,11 @@
+[variables]
+SKIP_CLIENT_INSTALL = "true"
+
 [phases.setup]
 nixPkgs = ["nodejs_18"]
 
 [phases.install]
-# Skip postinstall script by setting SKIP_CLIENT_INSTALL env var
-cmds = ["SKIP_CLIENT_INSTALL=true npm ci --only=production"]
+# Skip postinstall script - SKIP_CLIENT_INSTALL env var is set above
 
 [phases.build]
 # No build step needed for worker
