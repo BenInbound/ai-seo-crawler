@@ -12,7 +12,8 @@ import { crawls as crawlsAPI } from '../../services/api';
 
 function CrawlForm({ projectId, onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
-    runType: 'full'
+    runType: 'full',
+    manualUrl: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -37,6 +38,11 @@ function CrawlForm({ projectId, onSuccess, onCancel }) {
       value: 'delta',
       label: 'Delta Crawl',
       description: 'Only crawl pages that have changed since last crawl'
+    },
+    {
+      value: 'manual',
+      label: 'Manual URL',
+      description: 'Crawl a single specific URL that you provide'
     }
   ];
 
@@ -52,6 +58,23 @@ function CrawlForm({ projectId, onSuccess, onCancel }) {
   const handleSubmit = async e => {
     e.preventDefault();
     setError(null);
+
+    // Validate manual URL if manual runType is selected
+    if (formData.runType === 'manual') {
+      if (!formData.manualUrl || formData.manualUrl.trim() === '') {
+        setError('Please enter a URL to crawl');
+        return;
+      }
+
+      // Basic URL validation
+      try {
+        new URL(formData.manualUrl);
+      } catch (err) {
+        setError('Please enter a valid URL (including http:// or https://)');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -116,6 +139,27 @@ function CrawlForm({ projectId, onSuccess, onCancel }) {
             ))}
           </div>
         </div>
+
+        {/* Manual URL Input - Only shown when Manual URL is selected */}
+        {formData.runType === 'manual' && (
+          <div>
+            <label htmlFor="manualUrl" className="block text-sm font-medium text-gray-700 mb-2">
+              URL to Crawl
+            </label>
+            <input
+              type="text"
+              id="manualUrl"
+              name="manualUrl"
+              value={formData.manualUrl}
+              onChange={handleChange}
+              placeholder="https://example.com/page-to-crawl"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Enter the complete URL including http:// or https://
+            </p>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end space-x-3 pt-4">

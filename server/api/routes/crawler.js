@@ -186,10 +186,10 @@ router.post(
   async (req, res) => {
     try {
       const { projectId } = req.params;
-      const { runType = 'full' } = req.body;
+      const { runType = 'full', manualUrl } = req.body;
 
       // Validate run type
-      const validRunTypes = ['full', 'sitemap_only', 'sample', 'delta'];
+      const validRunTypes = ['full', 'sitemap_only', 'sample', 'delta', 'manual'];
       if (!validRunTypes.includes(runType)) {
         return res.status(400).json({
           error: 'Bad Request',
@@ -197,17 +197,40 @@ router.post(
         });
       }
 
+      // If manual runType, validate manualUrl
+      if (runType === 'manual') {
+        if (!manualUrl || typeof manualUrl !== 'string' || manualUrl.trim() === '') {
+          return res.status(400).json({
+            error: 'Bad Request',
+            message: 'manualUrl is required when runType is "manual"'
+          });
+        }
+
+        // Validate URL format
+        try {
+          new URL(manualUrl);
+        } catch (err) {
+          return res.status(400).json({
+            error: 'Bad Request',
+            message: 'manualUrl must be a valid URL (including http:// or https://)'
+          });
+        }
+      }
+
       // Get project configuration
       const project = req.project;
+
+      // Determine base URL - use manualUrl if provided, otherwise use project target_url
+      const baseUrl = runType === 'manual' ? manualUrl : project.target_url;
 
       // Create crawl run record
       const crawlRun = await CrawlRunModel.create({
         project_id: projectId,
         run_type: runType,
         config_snapshot: {
-          base_url: project.target_url, // Use target_url from project
+          base_url: baseUrl,
           user_agent: project.user_agent || process.env.USER_AGENT || 'AEO-Platform-Bot/1.0',
-          depth_limit: project.config?.depth_limit || 3,
+          depth_limit: runType === 'manual' ? 0 : (project.config?.depth_limit || 3), // depth=0 for manual (single URL)
           sample_size: project.config?.sample_size || null,
           token_limit: project.config?.token_limit || null,
           excluded_patterns: project.config?.excluded_patterns || []
