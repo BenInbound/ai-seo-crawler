@@ -30,6 +30,7 @@
  * Get Supabase client (will be imported from database service)
  */
 let supabase;
+const { supabaseAdmin } = require('../services/database/supabase');
 
 function setSupabaseClient(client) {
   supabase = client;
@@ -377,7 +378,8 @@ async function hasProjectAccess(userId, projectId) {
   }
 
   // Check if user is a member of the project's organization
-  const { data, error } = await supabase
+  // Use admin client to bypass RLS
+  const { data, error } = await supabaseAdmin
     .from('org_members')
     .select('id')
     .eq('user_id', userId)
