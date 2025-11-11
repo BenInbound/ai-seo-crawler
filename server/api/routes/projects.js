@@ -247,11 +247,12 @@ router.post('/organizations/:orgId/projects', requireAuth, requireOrgAccess, asy
 
 /**
  * GET /projects/:projectId
- * Get project details with stats
+ * Get project details with stats (all authenticated users)
  */
-router.get('/projects/:projectId', requireAuth, requireProjectAccess, async (req, res) => {
+router.get('/projects/:projectId', requireAuth, async (req, res) => {
+  const { projectId } = req.params;
   try {
-    const project = await getProjectWithStats(req.projectId);
+    const project = await getProjectWithStats(projectId);
 
     if (!project) {
       return res.status(404).json({
@@ -271,13 +272,13 @@ router.get('/projects/:projectId', requireAuth, requireProjectAccess, async (req
 
 /**
  * PATCH /projects/:projectId
- * Update project (all authenticated users with project access)
+ * Update project (all authenticated users)
  */
 router.patch(
   '/projects/:projectId',
   requireAuth,
-  requireProjectAccess,
   async (req, res) => {
+    const { projectId } = req.params;
     try {
       const { name, target_url, description, config } = req.body;
 
@@ -287,7 +288,7 @@ router.patch(
       if (description !== undefined) updates.description = description;
       if (config !== undefined) updates.config = config;
 
-      const project = await updateProject(req.projectId, updates);
+      const project = await updateProject(projectId, updates);
 
       res.status(200).json(project);
     } catch (error) {
@@ -347,7 +348,7 @@ router.delete('/projects/:projectId', requireAuth, async (req, res) => {
 
 /**
  * GET /projects/:projectId/pages
- * List pages in a project with scores and filtering
+ * List pages in a project with scores and filtering (all authenticated users)
  *
  * Query parameters:
  * - minScore: Minimum overall score (0-100)
@@ -360,7 +361,8 @@ router.delete('/projects/:projectId', requireAuth, async (req, res) => {
  *
  * For User Story 3: Page scoring with filtering
  */
-router.get('/projects/:projectId/pages', requireAuth, requireProjectAccess, async (req, res) => {
+router.get('/projects/:projectId/pages', requireAuth, async (req, res) => {
+  const { projectId } = req.params;
   try {
     const PageModel = require('../../models/page');
     const PageScoreModel = require('../../models/score');
@@ -394,7 +396,7 @@ router.get('/projects/:projectId/pages', requireAuth, requireProjectAccess, asyn
     }
 
     // Get pages with scores
-    const pages = await PageModel.listByProject(req.projectId, options);
+    const pages = await PageModel.listByProject(projectId, options);
 
     // For each page, get its current score if available
     const pagesWithScores = await Promise.all(
@@ -477,7 +479,7 @@ router.get('/projects/:projectId/pages', requireAuth, requireProjectAccess, asyn
     });
 
     res.status(200).json({
-      projectId: req.projectId,
+      projectId: projectId,
       pages: filteredPages,
       pagination: {
         limit: parseInt(limit, 10),
@@ -501,7 +503,7 @@ router.get('/projects/:projectId/pages', requireAuth, requireProjectAccess, asyn
 
 /**
  * GET /pages/:pageId
- * Get single page details with score
+ * Get single page details with score (all authenticated users)
  *
  * For User Story 3: Page detail view
  */
@@ -518,16 +520,6 @@ router.get('/pages/:pageId', requireAuth, async (req, res) => {
       return res.status(404).json({
         error: 'Not Found',
         details: 'Page not found'
-      });
-    }
-
-    // Check project access
-    const hasAccess = await hasProjectAccess(req.userId, page.project_id);
-
-    if (!hasAccess) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        details: 'You do not have access to this page'
       });
     }
 
@@ -566,7 +558,7 @@ router.get('/pages/:pageId', requireAuth, async (req, res) => {
 /**
  * PATCH /api/pages/:pageId
  *
- * Update page details (e.g., manually override page type)
+ * Update page details (all authenticated users)
  */
 router.patch('/pages/:pageId', requireAuth, async (req, res) => {
   try {
@@ -581,16 +573,6 @@ router.patch('/pages/:pageId', requireAuth, async (req, res) => {
       return res.status(404).json({
         error: 'Not Found',
         details: 'Page not found'
-      });
-    }
-
-    // Check project access
-    const hasAccess = await hasProjectAccess(req.userId, page.project_id);
-
-    if (!hasAccess) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        details: 'You do not have access to this page'
       });
     }
 

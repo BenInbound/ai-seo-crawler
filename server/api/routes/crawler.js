@@ -176,12 +176,11 @@ async function requireEditorRole(req, res, next) {
 
 /**
  * POST /projects/:projectId/crawls
- * Start new crawl
+ * Start new crawl (all authenticated users)
  */
 router.post(
   '/projects/:projectId/crawls',
   requireAuth,
-  requireProjectAccess,
   async (req, res) => {
     try {
       const { projectId } = req.params;
@@ -217,7 +216,13 @@ router.post(
       }
 
       // Get project configuration
-      const project = req.project;
+      const project = await ProjectModel.findProjectById(projectId);
+      if (!project) {
+        return res.status(404).json({
+          error: 'Not Found',
+          message: 'Project not found'
+        });
+      }
 
       // Determine base URL - use manualUrl if provided, otherwise use project target_url
       const baseUrl = runType === 'manual' ? manualUrl : project.target_url;
@@ -284,9 +289,9 @@ router.post(
 
 /**
  * GET /projects/:projectId/crawls
- * List project's crawl runs
+ * List project's crawl runs (all authenticated users)
  */
-router.get('/projects/:projectId/crawls', requireAuth, requireProjectAccess, async (req, res) => {
+router.get('/projects/:projectId/crawls', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
 
@@ -319,11 +324,21 @@ router.get('/projects/:projectId/crawls', requireAuth, requireProjectAccess, asy
 
 /**
  * GET /crawls/:crawlId
- * Get crawl status
+ * Get crawl status (all authenticated users)
  */
-router.get('/crawls/:crawlId', requireAuth, requireCrawlAccess, async (req, res) => {
+router.get('/crawls/:crawlId', requireAuth, async (req, res) => {
   try {
-    const crawlRun = req.crawlRun;
+    const { crawlId } = req.params;
+
+    // Get crawl run
+    const crawlRun = await CrawlRunModel.getById(crawlId);
+
+    if (!crawlRun) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Crawl run not found'
+      });
+    }
 
     res.json({
       id: crawlRun.id,
@@ -348,12 +363,21 @@ router.get('/crawls/:crawlId', requireAuth, requireCrawlAccess, async (req, res)
 
 /**
  * POST /crawls/:crawlId/pause
- * Pause crawl
+ * Pause crawl (all authenticated users)
  */
-router.post('/crawls/:crawlId/pause', requireAuth, requireCrawlAccess, async (req, res) => {
+router.post('/crawls/:crawlId/pause', requireAuth, async (req, res) => {
   try {
     const { crawlId } = req.params;
-    const crawlRun = req.crawlRun;
+
+    // Get crawl run
+    const crawlRun = await CrawlRunModel.getById(crawlId);
+
+    if (!crawlRun) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Crawl run not found'
+      });
+    }
 
     // Check if crawl is running or queued
     if (crawlRun.status !== 'running' && crawlRun.status !== 'queued') {
@@ -390,12 +414,21 @@ router.post('/crawls/:crawlId/pause', requireAuth, requireCrawlAccess, async (re
 
 /**
  * POST /crawls/:crawlId/resume
- * Resume crawl
+ * Resume crawl (all authenticated users)
  */
-router.post('/crawls/:crawlId/resume', requireAuth, requireCrawlAccess, async (req, res) => {
+router.post('/crawls/:crawlId/resume', requireAuth, async (req, res) => {
   try {
     const { crawlId } = req.params;
-    const crawlRun = req.crawlRun;
+
+    // Get crawl run
+    const crawlRun = await CrawlRunModel.getById(crawlId);
+
+    if (!crawlRun) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Crawl run not found'
+      });
+    }
 
     // Check if crawl is paused
     if (crawlRun.status !== 'paused') {
