@@ -213,19 +213,10 @@ router.get('/organizations/:orgId/projects', requireAuth, requireOrgAccess, asyn
 
 /**
  * POST /organizations/:orgId/projects
- * Create new project (editor or admin only)
+ * Create new project (all authenticated users)
  */
 router.post('/organizations/:orgId/projects', requireAuth, requireOrgAccess, async (req, res) => {
   try {
-    // Check role
-    const role = await getUserRole(req.userId, req.orgId);
-    if (!role || !['admin', 'editor'].includes(role)) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        details: 'This action requires editor or admin role'
-      });
-    }
-
     const { name, target_url, description, config } = req.body;
 
     if (!name || !target_url) {
@@ -280,13 +271,12 @@ router.get('/projects/:projectId', requireAuth, requireProjectAccess, async (req
 
 /**
  * PATCH /projects/:projectId
- * Update project (editor or admin only)
+ * Update project (all authenticated users with project access)
  */
 router.patch(
   '/projects/:projectId',
   requireAuth,
   requireProjectAccess,
-  requireEditor,
   async (req, res) => {
     try {
       const { name, target_url, description, config } = req.body;
@@ -312,7 +302,7 @@ router.patch(
 
 /**
  * DELETE /projects/:projectId
- * Delete project (admin only)
+ * Delete project (all authenticated users with project access)
  */
 router.delete('/projects/:projectId', requireAuth, async (req, res) => {
   try {
@@ -325,26 +315,13 @@ router.delete('/projects/:projectId', requireAuth, async (req, res) => {
       });
     }
 
-    // Check if user has permission to delete
-    // Allow if: platform admin OR organization admin
+    // Check if user has project access
+    const hasAccess = await hasProjectAccess(req.userId, projectId);
 
-    // Get user to check platform admin status
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('is_admin')
-      .eq('id', req.userId)
-      .single();
-
-    const isPlatformAdmin = user?.is_admin === true;
-
-    // Check organization admin role
-    const role = await getUserRole(req.userId, project.organization_id);
-    const isOrgAdmin = role === 'admin';
-
-    if (!isPlatformAdmin && !isOrgAdmin) {
+    if (!hasAccess) {
       return res.status(403).json({
         error: 'Forbidden',
-        details: 'Only platform admins or organization admins can delete projects'
+        details: 'You do not have access to this project'
       });
     }
 

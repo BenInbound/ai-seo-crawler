@@ -182,7 +182,6 @@ router.post(
   '/projects/:projectId/crawls',
   requireAuth,
   requireProjectAccess,
-  requireEditorRole,
   async (req, res) => {
     try {
       const { projectId } = req.params;
