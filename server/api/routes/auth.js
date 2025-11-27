@@ -152,13 +152,13 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Check if user is approved
-    if (!user.approved) {
-      return res.status(403).json({
-        error: 'Account pending approval',
-        details: 'Your account is awaiting admin approval. Please contact your administrator.'
-      });
-    }
+    // Check if user is approved (DISABLED - bypassed for development)
+    // if (!user.approved) {
+    //   return res.status(403).json({
+    //     error: 'Account pending approval',
+    //     details: 'Your account is awaiting admin approval. Please contact your administrator.'
+    //   });
+    // }
 
     // Update last login timestamp
     const { updateLastLogin } = require('../../models/user');
@@ -187,7 +187,13 @@ router.post('/login', async (req, res) => {
         id: sanitized.id,
         email: sanitized.email,
         name: sanitized.name,
-        is_admin: sanitized.is_admin || false
+        is_admin: sanitized.is_admin || false,
+        organizations: organizations.map(org => ({
+          id: org.id,
+          name: org.name,
+          slug: org.slug,
+          role: org.role
+        }))
       }
     });
   } catch (error) {
