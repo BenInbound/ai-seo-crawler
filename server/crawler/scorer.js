@@ -11,7 +11,7 @@ class ScoreCalculator {
   calculateScores(analysis) {
     const contentScore = this.calculateContentScore(analysis.content, analysis.aiReadiness);
     const eatScore = this.calculateEATScore(analysis.eat);
-    const technicalScore = this.calculateTechnicalScore(analysis.technical);
+    const technicalScore = this.calculateTechnicalScore(analysis.technical, analysis.multimedia);
     const structuredDataScore = this.calculateStructuredDataScore(analysis.structuredData);
 
     const overall = Math.round(
@@ -26,7 +26,13 @@ class ScoreCalculator {
       content: Math.round(contentScore),
       eat: Math.round(eatScore),
       technical: Math.round(technicalScore),
-      structuredData: Math.round(structuredDataScore)
+      structuredData: Math.round(structuredDataScore),
+      multimedia: analysis.multimedia ? {
+        hasVideo: analysis.multimedia.hasVideo,
+        hasCharts: analysis.multimedia.hasCharts,
+        videoCount: analysis.multimedia.videoCount,
+        summary: analysis.multimedia.summary
+      } : null
     };
   }
 
@@ -301,23 +307,23 @@ class ScoreCalculator {
     return score;
   }
 
-  calculateTechnicalScore(technical) {
+  calculateTechnicalScore(technical, multimedia = null) {
     let score = 0;
 
     // HTTPS (15 points)
     if (technical.isHTTPS) score += 15;
 
-    // Mobile optimization (25 points)
-    if (technical.mobileOptimization.hasViewportMeta) score += 10;
-    score += Math.min(10, technical.mobileOptimization.responsiveImageRatio * 10);
-    if (technical.mobileOptimization.hasMobileCSS) score += 5;
+    // Mobile optimization (20 points - reduced from 25 to make room for multimedia)
+    if (technical.mobileOptimization.hasViewportMeta) score += 8;
+    score += Math.min(8, technical.mobileOptimization.responsiveImageRatio * 8);
+    if (technical.mobileOptimization.hasMobileCSS) score += 4;
 
-    // Page speed (20 points)
+    // Page speed (15 points - reduced from 20)
     const loadTime = technical.speedFactors.loadTime;
-    if (loadTime < 2000) score += 20;
-    else if (loadTime < 3000) score += 15;
-    else if (loadTime < 5000) score += 10;
-    else score += 5;
+    if (loadTime < 2000) score += 15;
+    else if (loadTime < 3000) score += 12;
+    else if (loadTime < 5000) score += 8;
+    else score += 4;
 
     // Meta tags (15 points)
     if (technical.metaAnalysis.hasMetaDescription) {
@@ -326,7 +332,7 @@ class ScoreCalculator {
       else if (descLength >= 100 && descLength <= 180) score += 5;
       else if (descLength > 0) score += 3;
     }
-    
+
     const titleLength = technical.metaAnalysis.titleLength;
     if (titleLength >= 30 && titleLength <= 60) score += 7;
     else if (titleLength > 0) score += 4;
@@ -335,16 +341,24 @@ class ScoreCalculator {
     if (technical.internalLinking.hasNavigation) score += 5;
     score += Math.min(5, technical.internalLinking.internalLinkCount / 5);
 
-    // Image optimization (10 points)
+    // Image optimization (8 points - reduced from 10)
     if (technical.imageOptimization.totalImages === 0) {
-      score += 5; // No images is better than unoptimized images
+      score += 4;
     } else {
-      score += Math.min(10, technical.imageOptimization.imagesWithAlt / 10);
+      score += Math.min(8, technical.imageOptimization.imagesWithAlt / 12.5);
     }
 
     // Technical elements (5 points)
     if (technical.canonicalURL) score += 3;
     if (technical.hasRobotsMeta) score += 2;
+
+    // Multimedia richness (12 points) - Based on rubric's multimedia_richness criterion
+    if (multimedia) {
+      if (multimedia.hasVideo) score += 5;  // Videos are highly valued for AI Overviews
+      if (multimedia.hasCharts) score += 3;
+      if (multimedia.hasDataTables) score += 2;
+      if (multimedia.hasInfographics) score += 2;
+    }
 
     return Math.min(100, score);
   }
@@ -401,9 +415,9 @@ class ScoreCalculator {
       recommendations.push(...this.getEATRecommendations(analysis.eat));
     }
 
-    // Technical recommendations
+    // Technical recommendations (includes multimedia)
     if (scores.technical < 70) {
-      recommendations.push(...this.getTechnicalRecommendations(analysis.technical));
+      recommendations.push(...this.getTechnicalRecommendations(analysis.technical, analysis.multimedia));
     }
 
     // Structured data recommendations
@@ -543,7 +557,7 @@ class ScoreCalculator {
     return recommendations;
   }
 
-  getTechnicalRecommendations(technical) {
+  getTechnicalRecommendations(technical, multimedia = null) {
     const recommendations = [];
 
     // HTTPS
@@ -555,6 +569,18 @@ class ScoreCalculator {
         recommendation: 'Implement SSL certificate. HTTPS is required for AI search trust and ranking.',
         impact: 'High - HTTPS is a baseline requirement',
         urgency: 'Critical security and trust issue'
+      });
+    }
+
+    // Multimedia richness
+    if (!multimedia || !multimedia.hasVideo) {
+      recommendations.push({
+        category: 'Multimedia Richness',
+        priority: 'medium',
+        issue: 'No video content detected',
+        recommendation: 'Add explainer videos, tutorials, or embedded videos (YouTube, Vimeo, HubSpot) with VideoObject schema markup.',
+        impact: 'Medium - Videos enhance content engagement and AI Overviews visibility',
+        implementation: 'Embed short explainer videos and add VideoObject schema for better AI understanding.'
       });
     }
 

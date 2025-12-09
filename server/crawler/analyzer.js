@@ -21,7 +21,8 @@ class ContentAnalyzer {
       eat: this.analyzeEAT($, pageData, pageType),
       technical: this.analyzeTechnical($, pageData),
       structuredData: this.analyzeStructuredData(pageData),
-      aiReadiness: this.analyzeAIReadiness($, pageData, pageType)
+      aiReadiness: this.analyzeAIReadiness($, pageData, pageType),
+      multimedia: this.analyzeMultimedia($, pageData)
     };
   }
 
@@ -956,6 +957,148 @@ class ContentAnalyzer {
     }, 0);
 
     return wordCount > 0 ? (conversationalCount / wordCount) * 100 : 0;
+  }
+
+  /**
+   * Analyze multimedia content (videos, iframes, charts, infographics)
+   * Based on multimedia_richness criterion from AEO rubric
+   */
+  analyzeMultimedia($, pageData) {
+    // Detect native video elements
+    const nativeVideos = $('video').map((i, el) => ({
+      type: 'native',
+      src: $(el).attr('src') || $(el).find('source').attr('src') || '',
+      hasControls: $(el).attr('controls') !== undefined
+    })).get();
+
+    // Detect iframe-embedded videos (YouTube, Vimeo, HubSpot, Wistia, etc.)
+    const videoIframes = [];
+    const videoPlatforms = [
+      { name: 'youtube', patterns: ['youtube.com', 'youtube-nocookie.com', 'youtu.be'] },
+      { name: 'vimeo', patterns: ['vimeo.com', 'player.vimeo.com'] },
+      { name: 'hubspot', patterns: ['hubspot.com', 'hs-scripts.com', 'hubspotusercontent', 'play.hubspot.com', 'share.hubspotusercontent'] },
+      { name: 'wistia', patterns: ['wistia.com', 'wistia.net', 'fast.wistia'] },
+      { name: 'vidyard', patterns: ['vidyard.com', 'play.vidyard.com'] },
+      { name: 'loom', patterns: ['loom.com'] },
+      { name: 'dailymotion', patterns: ['dailymotion.com'] },
+      { name: 'brightcove', patterns: ['brightcove.com', 'players.brightcove.net'] },
+      { name: 'jwplayer', patterns: ['jwplayer.com', 'jwplatform.com'] },
+      { name: 'kaltura', patterns: ['kaltura.com', 'cdnapi.kaltura.com'] },
+      { name: 'vidyard', patterns: ['vidyard.com'] },
+      { name: 'twitch', patterns: ['twitch.tv', 'player.twitch.tv'] },
+      { name: 'facebook', patterns: ['facebook.com/plugins/video'] },
+      { name: 'tiktok', patterns: ['tiktok.com'] }
+    ];
+
+    $('iframe').each((i, el) => {
+      const src = $(el).attr('src') || $(el).attr('data-src') || '';
+      const srcLower = src.toLowerCase();
+
+      for (const platform of videoPlatforms) {
+        if (platform.patterns.some(pattern => srcLower.includes(pattern))) {
+          videoIframes.push({
+            type: 'iframe',
+            platform: platform.name,
+            src: src
+          });
+          break;
+        }
+      }
+    });
+
+    // Detect HubSpot-specific video embeds (they use various embed methods)
+    const hubspotVideoDivs = $('[data-hsv-embed], [class*="hs-video"], [class*="hubspot-video"], [data-video-id]').length;
+
+    // Detect embed and object video elements
+    const embedVideos = $('embed[type*="video"], object[type*="video"], embed[src*="video"], object[data*="video"]').length;
+
+    // Detect data visualizations (charts, graphs)
+    const charts = {
+      canvas: $('canvas').length,
+      svg: $('svg').filter((i, el) => {
+        // SVG likely to be a chart (has paths, rects, circles commonly used in charts)
+        const $svg = $(el);
+        return $svg.find('path').length > 2 || $svg.find('rect').length > 3 || $svg.find('circle').length > 3;
+      }).length,
+      chartDivs: $('[class*="chart"], [class*="graph"], [id*="chart"], [id*="graph"]').length,
+      tables: $('table').filter((i, el) => {
+        // Tables with numeric data are likely data visualizations
+        const text = $(el).text();
+        const hasNumbers = /\d+/.test(text);
+        const rows = $(el).find('tr').length;
+        return hasNumbers && rows > 2;
+      }).length
+    };
+
+    // Detect infographics
+    const infographics = $('img').filter((i, el) => {
+      const $img = $(el);
+      const alt = ($img.attr('alt') || '').toLowerCase();
+      const src = ($img.attr('src') || '').toLowerCase();
+      const className = ($img.attr('class') || '').toLowerCase();
+
+      return alt.includes('infographic') ||
+             src.includes('infographic') ||
+             className.includes('infographic') ||
+             alt.includes('diagram') ||
+             alt.includes('flowchart');
+    }).length;
+
+    // Calculate totals
+    const totalVideos = nativeVideos.length + videoIframes.length + hubspotVideoDivs + embedVideos;
+    const totalCharts = charts.canvas + charts.svg + charts.chartDivs;
+    const totalDataTables = charts.tables;
+
+    // Determine has values
+    const hasVideo = totalVideos > 0;
+    const hasCharts = totalCharts > 0;
+    const hasDataTables = totalDataTables > 0;
+    const hasInfographics = infographics > 0;
+
+    // Calculate multimedia richness score (0-100)
+    let multimediaScore = 0;
+    if (hasVideo) multimediaScore += 40; // Videos are highly valued
+    if (hasCharts) multimediaScore += 25;
+    if (hasDataTables) multimediaScore += 15;
+    if (hasInfographics) multimediaScore += 20;
+    multimediaScore = Math.min(100, multimediaScore);
+
+    return {
+      hasVideo,
+      hasCharts,
+      hasDataTables,
+      hasInfographics,
+      videoCount: totalVideos,
+      chartCount: totalCharts,
+      dataTableCount: totalDataTables,
+      infographicCount: infographics,
+      videos: {
+        native: nativeVideos,
+        iframe: videoIframes,
+        hubspotEmbeds: hubspotVideoDivs,
+        embedObjects: embedVideos
+      },
+      charts: {
+        canvas: charts.canvas,
+        svg: charts.svg,
+        chartDivs: charts.chartDivs
+      },
+      multimediaScore,
+      summary: this.generateMultimediaSummary(hasVideo, hasCharts, hasDataTables, hasInfographics)
+    };
+  }
+
+  generateMultimediaSummary(hasVideo, hasCharts, hasDataTables, hasInfographics) {
+    const elements = [];
+    if (hasVideo) elements.push('video');
+    if (hasCharts) elements.push('charts/graphs');
+    if (hasDataTables) elements.push('data tables');
+    if (hasInfographics) elements.push('infographics');
+
+    if (elements.length === 0) {
+      return 'No multimedia content detected';
+    }
+    return `Contains: ${elements.join(', ')}`;
   }
 }
 
