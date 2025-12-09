@@ -22,13 +22,28 @@ const { ContentAnalyzer } = require('./analyzer');
 const { ScoreCalculator } = require('./scorer');
 const URL = require('url').URL;
 
+/**
+ * Sanitize user agent string to remove invalid characters
+ * Puppeteer's setUserAgent rejects strings with newlines, carriage returns, and other control chars
+ * @param {string} userAgent - Raw user agent string
+ * @returns {string} - Sanitized user agent string
+ */
+function sanitizeUserAgent(userAgent) {
+  if (!userAgent || typeof userAgent !== 'string') {
+    return 'AEO-Platform-Bot/1.0';
+  }
+  // Remove newlines, carriage returns, tabs, and other control characters
+  return userAgent.replace(/[\r\n\t\x00-\x1F\x7F]/g, '').trim();
+}
+
 class CrawlerEngine {
   constructor(projectConfig = {}) {
     // Multi-tenant configuration support
     this.projectId = projectConfig.projectId || null;
     this.projectConfig = projectConfig.config || {};
-    this.userAgent =
-      projectConfig.userAgent || process.env.USER_AGENT || 'AEO-Platform-Bot/1.0';
+    this.userAgent = sanitizeUserAgent(
+      projectConfig.userAgent || process.env.USER_AGENT || 'AEO-Platform-Bot/1.0'
+    );
 
     // Initialize with project-specific user agent
     this.robotsChecker = new RobotsChecker(this.userAgent);
@@ -251,8 +266,8 @@ class CrawlerEngine {
       // Use crawl delay from robots.txt if specified
       const crawlDelay = Math.max(robotsInfo.crawlDelay * 1000, this.crawlDelay);
 
-      // Update user agent for this analysis
-      this.userAgent = selectedUserAgent;
+      // Update user agent for this analysis (sanitize to prevent Puppeteer errors)
+      this.userAgent = sanitizeUserAgent(selectedUserAgent);
 
       // Initialize browser (or try to)
       await this.initBrowser();
