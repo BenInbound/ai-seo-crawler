@@ -18,6 +18,18 @@ const cheerio = require('cheerio');
 const { URL } = require('url');
 
 /**
+ * Sanitize user agent string to remove invalid characters
+ * @param {string} userAgent - Raw user agent string
+ * @returns {string} - Sanitized user agent string
+ */
+function sanitizeUserAgent(userAgent) {
+  if (!userAgent || typeof userAgent !== 'string') {
+    return 'AEO-Platform-Bot/1.0';
+  }
+  return userAgent.replace(/[\r\n\t\x00-\x1F\x7F]/g, '').trim();
+}
+
+/**
  * Discover sitemap URLs for a website
  *
  * @param {string} baseUrl - Root URL of the website
@@ -27,13 +39,15 @@ const { URL } = require('url');
 async function discoverSitemaps(baseUrl, userAgent = 'AEO-Platform-Bot/1.0') {
   const discovered = new Set();
   const base = new URL(baseUrl);
+  const cleanUserAgent = sanitizeUserAgent(userAgent);
 
-  // Try robots.txt first
+  // Try robots.txt first (follow redirects to handle www vs non-www)
   try {
     const robotsUrl = `${base.origin}/robots.txt`;
     const response = await axios.get(robotsUrl, {
-      headers: { 'User-Agent': userAgent },
-      timeout: 10000
+      headers: { 'User-Agent': cleanUserAgent },
+      timeout: 10000,
+      maxRedirects: 5
     });
 
     const lines = response.data.split('\n');
@@ -47,7 +61,7 @@ async function discoverSitemaps(baseUrl, userAgent = 'AEO-Platform-Bot/1.0') {
     // robots.txt not found or error, continue
   }
 
-  // Try common sitemap locations
+  // Try common sitemap locations (follow redirects for www vs non-www)
   const commonPaths = [
     '/sitemap.xml',
     '/sitemap_index.xml',
@@ -59,11 +73,14 @@ async function discoverSitemaps(baseUrl, userAgent = 'AEO-Platform-Bot/1.0') {
   for (const path of commonPaths) {
     const sitemapUrl = `${base.origin}${path}`;
     try {
-      await axios.head(sitemapUrl, {
-        headers: { 'User-Agent': userAgent },
-        timeout: 5000
+      const headResponse = await axios.head(sitemapUrl, {
+        headers: { 'User-Agent': cleanUserAgent },
+        timeout: 5000,
+        maxRedirects: 5
       });
-      discovered.add(sitemapUrl);
+      // Use the final URL after redirects
+      const finalUrl = headResponse.request?.res?.responseUrl || sitemapUrl;
+      discovered.add(finalUrl);
     } catch (e) {
       // Not found, continue
     }
@@ -80,11 +97,13 @@ async function discoverSitemaps(baseUrl, userAgent = 'AEO-Platform-Bot/1.0') {
  * @returns {Promise<Object>} - Parsed sitemap { urls: Array, sitemaps: Array }
  */
 async function parseSitemap(sitemapUrl, userAgent = 'AEO-Platform-Bot/1.0') {
+  const cleanUserAgent = sanitizeUserAgent(userAgent);
   try {
     const response = await axios.get(sitemapUrl, {
-      headers: { 'User-Agent': userAgent },
+      headers: { 'User-Agent': cleanUserAgent },
       timeout: 30000,
-      maxContentLength: 50 * 1024 * 1024 // 50MB max
+      maxContentLength: 50 * 1024 * 1024, // 50MB max
+      maxRedirects: 5
     });
 
     const $ = cheerio.load(response.data, { xmlMode: true });
